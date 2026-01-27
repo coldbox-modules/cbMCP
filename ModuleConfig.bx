@@ -6,20 +6,20 @@
 class {
 
 	// Module Properties
-	this.title 				= "cbAITools";
-	this.author 			= "Ortus Solutions";
-	this.webURL 			= "https://www.ortussolutions.com";
-	this.description 		= "@MODULE_DESCRIPTION@";
-	this.version 			= "@build.version@+@build.number@";
+	this.title 				= "cbAITools"
+	this.author 			= "Ortus Solutions"
+	this.webURL 			= "https://www.ortussolutions.com"
+	this.description 		= "A collection of AI powered tools for ColdBox."
+	this.version 			= "@build.version@+@build.number@"
 
 	// Model Namespace
-	this.modelNamespace		= "cbAITools";
+	this.modelNamespace		= "cbAITools"
 
 	// CF Mapping
-	this.cfmapping			= "cbAITools";
+	this.cfmapping			= "cbAITools"
 
 	// Dependencies
-	this.dependencies 		= [];
+	this.dependencies 		= []
 
 	/**
 	 * Configure Module
@@ -27,7 +27,7 @@ class {
 	function configure(){
 		settings = {
 
-		};
+		}
 	}
 
 	/**

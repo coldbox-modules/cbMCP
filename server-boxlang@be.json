@@ -1,8 +1,8 @@
 {
-	"name":"@MODULE_NAME@-boxlang-cfml@1",
+	"name":"cbAITools-boxlang@be",
     "app":{
-        "serverHomeDirectory":".engine/boxlang-cfml",
-        "cfengine":"boxlang@1"
+        "serverHomeDirectory":".engine/boxlang-be",
+        "cfengine":"boxlang@be"
     },
     "web":{
         "http":{
@@ -13,7 +13,7 @@
         },
 		"webroot": "test-harness",
 		"aliases":{
-            "/moduleroot/@MODULE_NAME@":"../"
+            "/moduleroot/cbAITools":"../"
         }
     },
     "JVM":{
@@ -28,6 +28,6 @@
     "env":{
     },
     "scripts":{
-        "onServerInitialInstall":"install bx-compat-cfml --noSave"
+        "onServerInitialInstall":""
     }
 }

@@ -1,24 +1,24 @@
-component extends="coldbox.system.testing.BaseTestCase" appMapping="root" {
+class extends="coldbox.system.testing.BaseTestCase"{
 
 	/*********************************** LIFE CYCLE Methods ***********************************/
 
 	function beforeAll(){
-		super.beforeAll();
-		setup();
+		super.beforeAll()
+		setup()
 	}
 
 	function afterAll(){
-		super.afterAll();
+		super.afterAll()
 	}
 
 	/*********************************** BDD SUITES ***********************************/
 
 	function run(){
-		describe( "MockData CFC", function(){
+		describe( "AI Tools", function(){
 			beforeEach( function( currentSpec ){
-			} );
+			} )
 
-		} );
+		} )
 	}
 
 }

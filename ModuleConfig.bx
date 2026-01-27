@@ -3,20 +3,20 @@
  * www.ortussolutions.com
  * ---
  */
-component {
+class {
 
 	// Module Properties
-	this.title 				= "@MODULE_NAME@";
+	this.title 				= "cbAITools";
 	this.author 			= "Ortus Solutions";
 	this.webURL 			= "https://www.ortussolutions.com";
 	this.description 		= "@MODULE_DESCRIPTION@";
 	this.version 			= "@build.version@+@build.number@";
 
 	// Model Namespace
-	this.modelNamespace		= "@MODULE_SLUG@";
+	this.modelNamespace		= "cbAITools";
 
 	// CF Mapping
-	this.cfmapping			= "@MODULE_SLUG@";
+	this.cfmapping			= "cbAITools";
 
 	// Dependencies
 	this.dependencies 		= [];

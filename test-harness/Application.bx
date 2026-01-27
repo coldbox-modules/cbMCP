@@ -4,10 +4,10 @@ Copyright 2005-2007 ColdBox Framework by Luis Majano and Ortus Solutions, Corp
 www.ortussolutions.com
 ********************************************************************************
 */
-component{
+class{
 
 	// UPDATE THE NAME OF THE MODULE IN TESTING BELOW
-	request.MODULE_NAME = "@MODULE_NAME@";
+	request.MODULE_NAME = "cbAITools";
 
 	// Application properties
 	this.name              = hash( getCurrentTemplatePath() );

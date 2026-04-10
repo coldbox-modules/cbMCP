@@ -1,0 +1,48 @@
+/**
+ * MCP Tools for ColdBox task scheduler introspection.
+ */
+class {
+
+	/**
+	 * Get all registered task schedulers with their configurations and scheduled tasks.
+	 */
+	@AITool
+	@mcpTool
+	function get_schedulers() {
+		var schedulers = application.cbController.getSchedulerService().getSchedulers()
+		var result     = []
+
+		schedulers.each( ( schedulerName, scheduler ) => {
+			var tasks = []
+
+			try {
+				var scheduledTasks = scheduler.getTasks()
+				scheduledTasks.each( ( taskName, task ) => {
+					tasks.append( {
+						"name"        : taskName,
+						"disabled"    : task.getDisabled(),
+						"hasStarted"  : task.hasStarted(),
+						"scheduledAt" : task.getScheduledAt(),
+						"nextRun"     : task.getNextRun(),
+						"lastRun"     : task.getLastRun(),
+						"lastResult"  : task.getLastResult(),
+						"stats"       : task.getStats()
+					} )
+				} )
+			} catch ( any e ) {
+				// Scheduler may not implement getTasks()
+			}
+
+			result.append( {
+				"name"      : schedulerName,
+				"executor"  : scheduler.getExecutor()?.getName() ?: "default",
+				"timezone"  : scheduler.getTimezone()?.getID() ?: "",
+				"tasks"     : tasks,
+				"taskCount" : tasks.len()
+			} )
+		} )
+
+		return jsonSerialize( result )
+	}
+
+}

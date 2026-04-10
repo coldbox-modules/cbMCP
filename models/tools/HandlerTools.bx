@@ -1,0 +1,49 @@
+/**
+ * MCP Tools for ColdBox handler (controller) introspection.
+ */
+class {
+
+	/**
+	 * Get all application handlers (controllers) including their public actions/methods.
+	 */
+	@AITool
+	@mcpTool
+	function get_handlers() {
+		var controller              = application.cbController
+		var handlerService          = controller.getHandlerService()
+		var handlersPath            = controller.getSetting( "handlersPath" )
+		var handlersInvocationPath  = controller.getSetting( "handlersInvocationPath" )
+		var handlers                = handlerService.getHandlerListing( handlersPath )
+		var result                  = []
+
+		handlers.each( ( handler ) => {
+			try {
+				var metadata = getClassMetadata( handlersInvocationPath & "." & handler )
+				var actions  = []
+
+				if ( metadata.keyExists( "functions" ) ) {
+					metadata.functions.each( ( func ) => {
+						if ( func.access == "public" ) {
+							actions.append( { "name" : func.name } )
+						}
+					} )
+				}
+
+				result.append( {
+					"handler"        : handler,
+					"invocationPath" : handlersInvocationPath & "." & handler,
+					"actions"        : actions,
+					"extends"        : metadata.extends?.name ?: ""
+				} )
+			} catch ( any e ) {
+				result.append( {
+					"handler" : handler,
+					"error"   : "Could not load metadata: " & e.message
+				} )
+			}
+		} )
+
+		return jsonSerialize( result )
+	}
+
+}

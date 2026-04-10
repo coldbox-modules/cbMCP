@@ -1,0 +1,37 @@
+/**
+ * MCP Tools for ColdBox interceptor introspection.
+ */
+class {
+
+	/**
+	 * Get all registered interceptors (event listeners) organized by interception points.
+	 */
+	@AITool
+	@mcpTool
+	function get_interceptors() {
+		var interceptionStates = application.cbController.getInterceptorService().getInterceptionStates()
+		var result             = []
+
+		interceptionStates.each( ( pointName, state ) => {
+			var interceptors = []
+
+			if ( state.keyExists( "interceptors" ) && isArray( state.interceptors ) ) {
+				state.interceptors.each( ( interceptor ) => {
+					interceptors.append( {
+						"name"  : interceptor.getName(),
+						"class" : getMetadata( interceptor ).name ?: ""
+					} )
+				} )
+			}
+
+			result.append( {
+				"interceptionPoint" : pointName,
+				"interceptors"      : interceptors,
+				"count"             : interceptors.len()
+			} )
+		} )
+
+		return jsonSerialize( result )
+	}
+
+}

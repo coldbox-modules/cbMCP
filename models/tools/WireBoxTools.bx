@@ -1,0 +1,33 @@
+/**
+ * MCP Tools for WireBox dependency injection container introspection.
+ */
+class {
+
+	/**
+	 * Get all WireBox dependency injection mappings (models/services registered in the DI container).
+	 */
+	@AITool
+	@mcpTool
+	function get_wirebox_mappings() {
+		var binder   = application.cbController.getWireBox().getBinder()
+		var mappings = binder.getMappings()
+		var result   = []
+
+		mappings.each( ( mappingName, mapping ) => {
+			result.append( {
+				"name"               : mappingName,
+				"path"               : mapping.getPath(),
+				"type"               : mapping.getType(),
+				"scope"              : mapping.getScope(),
+				"autowire"           : mapping.isAutowire(),
+				"alias"              : mapping.getAlias(),
+				"delegates"          : mapping.getDelegates(),
+				"threadSafe"         : mapping.getThreadSafe(),
+				"virtualInheritance" : mapping.getVirtualInheritance()
+			} )
+		} )
+
+		return jsonSerialize( result )
+	}
+
+}

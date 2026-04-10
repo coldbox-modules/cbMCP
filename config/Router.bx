@@ -1,3 +1,10 @@
 class{
+	/**
+	 * Router
+	 */
+	function configure(){
+		// Add Routes here
+		route( "mcp" ).toMCP( "cbAITools" )
+	}
 
 }

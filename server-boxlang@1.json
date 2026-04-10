@@ -1,5 +1,5 @@
 {
-	"name":"cbAITools-boxlang@1",
+    "name":"cbAITools-boxlang@1",
     "app":{
         "serverHomeDirectory":".engine/boxlang",
         "cfengine":"boxlang@1"
@@ -11,8 +11,8 @@
         "rewrites":{
             "enable":"true"
         },
-		"webroot": "test-harness",
-		"aliases":{
+        "webroot":"test-harness",
+        "aliases":{
             "/moduleroot/cbAITools":"../"
         }
     },
@@ -21,13 +21,11 @@
         "javaVersion":"openjdk21_jre",
         "args":"-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=8888"
     },
-	"openBrowser":"false",
-    "cfconfig":{
-        "file":".cfconfig.json"
-    },
+    "openBrowser":"false",
     "env":{
+        "BOXLANG_DEBUG":true
     },
     "scripts":{
-        "onServerInitialInstall":"install bx-esapi,bx-ai"
+        "onServerInitialInstall":"install bx-esapi,bx-ai@be"
     }
 }

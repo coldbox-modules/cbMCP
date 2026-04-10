@@ -1,0 +1,38 @@
+/**
+ * MCP Tools for CacheBox cache provider introspection.
+ */
+class {
+
+	/**
+	 * Get all registered CacheBox cache providers and their statistics.
+	 */
+	@AITool
+	@mcpTool
+	function get_caches() {
+		var cacheBox   = application.cbController.getCacheBox()
+		var cacheNames = cacheBox.getCacheNames()
+		var result     = []
+
+		cacheNames.each( ( cacheName ) => {
+			var cache = cacheBox.getCache( cacheName )
+			var stats = cache.getStats()
+
+			result.append( {
+				"name"          : cacheName,
+				"provider"      : getMetadata( cache ).name ?: "",
+				"stats"         : {
+					"hits"        : stats.getHits(),
+					"misses"      : stats.getMisses(),
+					"evictions"   : stats.getEvictionCount(),
+					"objectCount" : stats.getObjectCount(),
+					"freeMemory"  : stats.getGarbageCollections(),
+					"performance" : stats.getCachePerformanceRatio()
+				},
+				"configuration" : cache.getConfiguration()
+			} )
+		} )
+
+		return jsonSerialize( result )
+	}
+
+}

@@ -1,0 +1,120 @@
+/**
+ * MCP Tools for ColdBox system information: server time, framework settings,
+ * application structure, and runtime environment.
+ */
+class {
+
+	/**
+	 * Get the server's current date/time in ISO 8601 format.
+	 */
+	@AITool
+	@mcpTool
+	function time_now() {
+		return dateTimeFormat( now(), "iso" )
+	}
+
+	/**
+	 * Get ColdBox framework settings and configuration.
+	 */
+	@AITool
+	@mcpTool
+	function get_coldbox_settings() {
+		return jsonSerialize( application.cbController.getColdBoxSettings() )
+	}
+
+	/**
+	 * Get runtime environment info: engine (boxlang|lucee|adobe), version, app layout (flat|boxlang), and OS.
+	 */
+	@AITool
+	@mcpTool
+	function get_runtime_info() {
+		// Engine detection
+		var engine  = "adobe"
+		var version = ""
+		if ( server.keyExists( "boxlang" ) ) {
+			engine  = "boxlang"
+			version = server.boxlang.version ?: ""
+		} else if ( server.keyExists( "lucee" ) ) {
+			engine  = "lucee"
+			version = server.lucee.version ?: ""
+		} else if ( server.keyExists( "coldfusion" ) ) {
+			version = server.coldfusion.productversion ?: ""
+		}
+
+		var appPath = application.cbController.getSetting( "applicationPath" )
+		var layout  = detectAppLayout( appPath )
+
+		return jsonSerialize( {
+			"engine"  : engine,
+			"version" : version,
+			"layout"  : layout,
+			"os"      : server.os.name & " " & server.os.version
+		} )
+	}
+
+	/**
+	 * Get the application structure including modules, handlers, schedulers, interceptors, and more.
+	 * Adapts automatically to both flat and boxlang app layouts.
+	 */
+	@AITool
+	@mcpTool
+	function get_application_structure() {
+		var controller = application.cbController
+		var appPath    = controller.getSetting( "applicationPath" )
+		var layout     = detectAppLayout( appPath )
+		var result     = { "layout" : layout }
+
+		if ( layout == "boxlang" ) {
+			// BoxLang layout: app/ is the ColdBox root; public/, resources/, runtime/, tests/ are siblings
+			var rootPath               = getRootPath( appPath )
+			result[ "app" ]            = directoryList( appPath, true, "array" )
+			result[ "public" ]         = directoryExists( rootPath & "public" )         ? directoryList( rootPath & "public",         true,  "array" ) : []
+			result[ "resources" ]      = directoryExists( rootPath & "resources" )      ? directoryList( rootPath & "resources",      true,  "array" ) : []
+			result[ "runtime-lib" ]    = directoryExists( rootPath & "runtime/lib" )    ? directoryList( rootPath & "runtime/lib",    false, "array" ) : []
+			result[ "runtime-global" ] = directoryExists( rootPath & "runtime/global" ) ? directoryList( rootPath & "runtime/global", false, "array" ) : []
+			result[ "tests" ]          = directoryExists( rootPath & "tests" )          ? directoryList( rootPath & "tests",          true,  "array" ) : []
+		} else {
+			// Flat layout: all app code lives at the web root
+			result[ "app" ]        = directoryList( appPath, true, "array" )
+			result[ "modules_app" ] = directoryExists( appPath & "modules_app" ) ? directoryList( appPath & "modules_app", false, "array" ) : []
+			result[ "tests" ]      = directoryExists( appPath & "tests" )        ? directoryList( appPath & "tests",       true,  "array" ) : []
+		}
+
+		return jsonSerialize( result )
+	}
+
+	// -------------------------------------------------------------------------
+	// Private Helpers
+	// -------------------------------------------------------------------------
+
+	/**
+	 * Detect the ColdBox app layout from applicationPath.
+	 * Returns "boxlang" when the last path segment is "app", otherwise "flat".
+	 *
+	 * @appPath The applicationPath setting from the ColdBox controller.
+	 */
+	private string function detectAppLayout( required string appPath ) {
+		// Normalize separators and strip trailing slash
+		var p = arguments.appPath.replace( "\", "/", "all" )
+		if ( p.right( 1 ) == "/" ) {
+			p = p.left( p.len() - 1 )
+		}
+		return ( listLast( p, "/" ) == "app" ) ? "boxlang" : "flat"
+	}
+
+	/**
+	 * Return the root path (parent of "app/") for a boxlang-layout application.
+	 * The returned path always ends with a trailing slash.
+	 *
+	 * @appPath The applicationPath setting from the ColdBox controller.
+	 */
+	private string function getRootPath( required string appPath ) {
+		var p = arguments.appPath.replace( "\", "/", "all" )
+		if ( p.right( 1 ) == "/" ) {
+			p = p.left( p.len() - 1 )
+		}
+		// getDirectoryFromPath on "/x/y/app" returns "/x/y/"
+		return getDirectoryFromPath( p )
+	}
+
+}

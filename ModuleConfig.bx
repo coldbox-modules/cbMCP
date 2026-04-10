@@ -36,14 +36,24 @@ class {
 	 * Fired when the module is registered and activated.
 	 */
 	function onLoad(){
-
+		// Register our MCP Server here
+		mcpServer(
+			name: "cbAITools",
+			description: "A collection of AI powered tools for ColdBox.",
+			version: "@build.version@+@build.number@",
+			cors: "*",
+			statsEnabled: true,
+			force: true
+		)
+		// Register tools
+		.scan( "#modulePath#/models/tools" )
 	}
 
 	/**
 	 * Fired when the module is unregistered and unloaded
 	 */
 	function onUnload(){
-
+		aiService().removeServer( "cbAITools" )
 	}
 
 }

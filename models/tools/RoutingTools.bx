@@ -1,0 +1,35 @@
+/**
+ * MCP Tools for ColdBox URL routing: application routes and module routes.
+ */
+class {
+
+	/**
+	 * List the application's registered HTTP routes.
+	 */
+	@AITool
+	@mcpTool
+	function list_routes() {
+		return jsonSerialize( application.cbController.getRoutingService().getRouter().getRoutes() )
+	}
+
+	/**
+	 * List the application's module routing table.
+	 */
+	@AITool
+	@mcpTool
+	function list_module_routes() {
+		return jsonSerialize( application.cbController.getRoutingService().getRouter().getModuleRoutingTable() )
+	}
+
+	/**
+	 * Get all routes for a specific module.
+	 *
+	 * @moduleName The name of the module to get routes for.
+	 */
+	@AITool
+	@mcpTool
+	function get_module_routes( required string moduleName ) {
+		return jsonSerialize( application.cbController.getRoutingService().getModuleRoutes( moduleName ) )
+	}
+
+}

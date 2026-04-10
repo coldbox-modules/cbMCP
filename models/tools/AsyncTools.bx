@@ -1,0 +1,42 @@
+/**
+ * MCP Tools for ColdBox async executor introspection.
+ */
+class {
+
+	/**
+	 * Get all registered async executors with their status, thread pool info, and task statistics.
+	 */
+	@AITool
+	@mcpTool
+	function get_executors() {
+		var asyncManager   = application.cbController.getAsyncManager()
+		var executorNames  = asyncManager.getExecutorNames()
+		var statusMap      = asyncManager.getExecutorStatusMap()
+		var result         = []
+
+		executorNames.each( ( executorName ) => {
+			var status = statusMap[ executorName ] ?: {}
+			result.append( {
+				"name"                   : executorName,
+				"type"                   : status.type ?: "unknown",
+				"healthStatus"           : status.healthStatus ?: "unknown",
+				"healthReport"           : status.healthReport ?: {},
+				"activeCount"            : status.activeCount ?: 0,
+				"poolSize"               : status.poolSize ?: 0,
+				"corePoolSize"           : status.corePoolSize ?: 0,
+				"maximumPoolSize"        : status.maximumPoolSize ?: 0,
+				"largestPoolSize"        : status.largestPoolSize ?: 0,
+				"taskCount"              : status.taskCount ?: 0,
+				"completedTaskCount"     : status.completedTaskCount ?: 0,
+				"queueSize"              : status.queueSize ?: 0,
+				"queueRemainingCapacity" : status.queueRemainingCapacity ?: 0,
+				"isShutdown"             : status.isShutdown ?: false,
+				"isTerminated"           : status.isTerminated ?: false,
+				"isTerminating"          : status.isTerminating ?: false
+			} )
+		} )
+
+		return jsonSerialize( result )
+	}
+
+}

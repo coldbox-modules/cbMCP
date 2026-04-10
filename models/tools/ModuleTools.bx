@@ -1,0 +1,43 @@
+/**
+ * MCP Tools for ColdBox module management: registered modules and their configuration.
+ */
+class {
+
+	/**
+	 * Get all registered modules with their configuration and status (activated, paths, settings, etc.)
+	 */
+	@AITool
+	@mcpTool
+	function get_modules() {
+		var moduleService  = application.cbController.getModuleService()
+		var moduleRegistry = moduleService.getModuleRegistry()
+		var moduleConfigs  = moduleService.getModuleConfigCache()
+		var result         = []
+
+		moduleRegistry.each( ( moduleName, moduleInfo ) => {
+			result.append( {
+				"name"            : moduleName,
+				"path"            : moduleInfo.path ?: "",
+				"invocationPath"  : moduleInfo.invocationPath ?: "",
+				"activated"       : moduleInfo.activated ?: false,
+				"registered"      : moduleService.isModuleRegistered( moduleName ),
+				"settings"        : moduleConfigs[ moduleName ]?.settings ?: {},
+				"conventions"     : moduleConfigs[ moduleName ]?.conventions ?: {},
+				"parentSettings"  : moduleConfigs[ moduleName ]?.parentSettings ?: {},
+				"hasModuleConfig" : moduleConfigs.keyExists( moduleName )
+			} )
+		} )
+
+		return jsonSerialize( result )
+	}
+
+	/**
+	 * Get a simple array of loaded module names.
+	 */
+	@AITool
+	@mcpTool
+	function get_loaded_modules() {
+		return jsonSerialize( application.cbController.getModuleService().getLoadedModules() )
+	}
+
+}

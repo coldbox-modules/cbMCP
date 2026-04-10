@@ -15,18 +15,20 @@ class {
 	// Model Namespace
 	this.modelNamespace		= "cbAITools"
 
-	// CF Mapping
-	this.cfmapping			= "cbAITools"
+	// Engine Mapping
+	this.mapping			= "cbAITools"
 
 	// Dependencies
 	this.dependencies 		= []
+
+	// URI Endpoint Prefix
+	this.entryPoint		= "cbai"
 
 	/**
 	 * Configure Module
 	 */
 	function configure(){
 		settings = {
-
 		}
 	}
 

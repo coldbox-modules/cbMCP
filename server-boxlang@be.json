@@ -1,5 +1,5 @@
 {
-	"name":"cbAITools-boxlang@be",
+	"name":"cbMCP-boxlang@be",
     "app":{
         "serverHomeDirectory":".engine/boxlang-be",
         "cfengine":"boxlang@be"
@@ -13,7 +13,7 @@
         },
 		"webroot": "test-harness",
 		"aliases":{
-            "/moduleroot/cbAITools":"../"
+            "/moduleroot/cbMCP":"../"
         }
     },
     "JVM":{

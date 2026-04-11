@@ -1,6 +1,6 @@
 # Contributing Guide
 
-Hola amigo! I'm really excited that you are interested in contributing to cbAITools. Before submitting your contribution, please make sure to take a moment and read through the following guidelines:
+Hola amigo! I'm really excited that you are interested in contributing to cbMCP. Before submitting your contribution, please make sure to take a moment and read through the following guidelines:
 
 - [Code Of Conduct](#code-of-conduct)
 - [Bug Reporting](#bug-reporting)
@@ -98,11 +98,11 @@ You can support ColdBox and all of our Open Source initiatives at Ortus Solution
 
 ## Contributors
 
-Thank you to all the people who have already contributed to cbAITools! We :heart: :heart: :heart: love you!
+Thank you to all the people who have already contributed to cbMCP! We :heart: :heart: :heart: love you!
 
 
-<a href = "https://github.com/coldbox-modules/cbAITools/graphs/contributors">
-  <img src = "https://contrib.rocks/image?repo=coldbox-modules/cbAITools"/>
+<a href = "https://github.com/coldbox-modules/cbMCP/graphs/contributors">
+  <img src = "https://contrib.rocks/image?repo=coldbox-modules/cbMCP"/>
 </a>
 
 Made with [contributors-img](https://contrib.rocks)

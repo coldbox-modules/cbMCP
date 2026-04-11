@@ -1,8 +1,8 @@
-# cbAITools - ColdBox MCP Server Module
+# cbMCP - ColdBox MCP Server Module
 
 ## Project Overview
 
-`cbAITools` is a BoxLang PRIME module that exposes ColdBox applications to AI agents via the Model Context Protocol (MCP). This module enables AI assistants (like Claude, Cursor, VS Code Copilot, etc.) to introspect, understand, and interact with ColdBox applications in real-time.
+`cbMCP` is a BoxLang PRIME module that exposes ColdBox applications to AI agents via the Model Context Protocol (MCP). This module enables AI assistants (like Claude, Cursor, VS Code Copilot, etc.) to introspect, understand, and interact with ColdBox applications in real-time.
 
 Inspired by Laravel Boost, this module aims to be the **essential development companion** for every ColdBox developer, providing comprehensive insight into application structure, configuration, and runtime behavior.
 
@@ -188,22 +188,22 @@ MCP Prompts provide reusable prompt templates for common tasks:
 
 ```boxlang
 class {
-    this.title = "cbAITools"
+    this.title = "cbMCP"
     this.author = "Ortus Solutions"
     this.description = "MCP Server for ColdBox Applications"
     this.version = "@build.version@+@build.number@"
-    this.modelNamespace = "cbAITools"
-    this.cfmapping = "cbAITools"
+    this.modelNamespace = "cbMCP"
+    this.cfmapping = "cbMCP"
     this.dependencies = [ "bxai" ]
-    
+
     function configure(){
         settings = {
             // Security settings
             security : {
-                enabled : getSystemSetting( "CBAITOOLS_SECURITY", false ),
-                apiKey : getSystemSetting( "CBAITOOLS_API_KEY", "" )
+                enabled : getSystemSetting( "cbMCP_SECURITY", false ),
+                apiKey : getSystemSetting( "cbMCP_API_KEY", "" )
             },
-            
+
             // MCP Server settings
             mcp : {
                 serverName : "coldbox-mcp-server",
@@ -212,7 +212,7 @@ class {
                 enableResources : true,
                 enablePrompts : true
             },
-            
+
             // Tool-specific settings
             tools : {
                 maxLogEntries : 100,
@@ -223,12 +223,12 @@ class {
             }
         }
     }
-    
+
     function onLoad(){
         // Register MCP route
         if( settings.mcp.enableTools ){
             wirebox.getInstance( "router@coldbox" )
-                .addRoute( 
+                .addRoute(
                     pattern = "/mcp",
                     handler = "MCPHandler",
                     action = "index"
@@ -241,7 +241,7 @@ class {
 ## File Structure
 
 ```
-cbAITools/
+cbMCP/
 ├── ModuleConfig.bx           # Module configuration
 ├── box.json                  # Module metadata
 ├── PLAN.md                   # This file
@@ -328,8 +328,8 @@ box server start
 **Production** (with auth):
 ```bash
 # Set environment variables
-export CBAITOOLS_SECURITY=true
-export CBAITOOLS_API_KEY="super-secret-key-12345"
+export cbMCP_SECURITY=true
+export cbMCP_API_KEY="super-secret-key-12345"
 
 # Start app
 box server start
@@ -422,4 +422,4 @@ box server start
 
 ---
 
-**Goal**: Make cbAITools the **must-have** development tool for every ColdBox developer, providing unprecedented insight and control over ColdBox applications through AI-powered introspection.
+**Goal**: Make cbMCP the **must-have** development tool for every ColdBox developer, providing unprecedented insight and control over ColdBox applications through AI-powered introspection.

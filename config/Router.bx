@@ -4,7 +4,7 @@ class{
 	 */
 	function configure(){
 		// Add Routes here
-		route( "mcp" ).toMCP( "cbAITools" )
+		route( "/" ).toMCP( "cbMCP" )
 	}
 
 }

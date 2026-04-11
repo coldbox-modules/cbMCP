@@ -1,6 +1,470 @@
-﻿<bx:output>
-<h1>Module Tester</h1>
-<div>
-	#view()#
-</div>
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>ColdBox MCP Server</title>
+	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+	<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+	<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+	<style>
+		:root {
+			--boxlang-night: #041319;
+			--boxlang-void: #07202b;
+			--boxlang-surface: rgba(7, 32, 43, 0.82);
+			--boxlang-surface-strong: rgba(8, 39, 52, 0.94);
+			--boxlang-border: rgba(0, 219, 255, 0.24);
+			--boxlang-border-strong: rgba(0, 255, 117, 0.34);
+			--boxlang-primary: #00dbff;
+			--boxlang-secondary: #00ff75;
+			--boxlang-glow: #85ffe3;
+			--boxlang-text: #f3fffb;
+			--boxlang-text-muted: rgba(230, 255, 248, 0.74);
+			--boxlang-shadow: rgba(0, 0, 0, 0.32);
+		}
+
+		[x-cloak] {
+			display: none !important;
+		}
+
+		body {
+			background:
+				radial-gradient(circle at top left, rgba(0, 219, 255, 0.18), transparent 28%),
+				radial-gradient(circle at 85% 18%, rgba(0, 255, 117, 0.16), transparent 24%),
+				linear-gradient(135deg, var(--boxlang-night) 0%, #052430 48%, var(--boxlang-void) 100%);
+			min-height: 100vh;
+			color: var(--boxlang-text);
+			position: relative;
+		}
+
+		body::before {
+			content: "";
+			position: fixed;
+			inset: 0;
+			background-image:
+				linear-gradient(rgba(255, 255, 255, 0.018) 1px, transparent 1px),
+				linear-gradient(90deg, rgba(255, 255, 255, 0.018) 1px, transparent 1px);
+			background-size: 28px 28px;
+			opacity: 0.25;
+			pointer-events: none;
+		}
+
+		.container-fluid,
+		.navbar {
+			position: relative;
+			z-index: 1;
+		}
+
+		.navbar {
+			background-color: rgba(4, 19, 25, 0.88) !important;
+			backdrop-filter: blur(10px);
+			border-bottom: 1px solid var(--boxlang-border);
+			box-shadow: 0 14px 34px rgba(0, 0, 0, 0.22);
+		}
+
+		.navbar-brand {
+			display: flex;
+			align-items: center;
+			gap: 0.9rem;
+			font-weight: 700;
+			font-size: 1.15rem;
+			text-decoration: none;
+		}
+
+		.navbar-brand img {
+			height: 2.5rem;
+			width: auto;
+			filter: drop-shadow(0 0 16px rgba(0, 219, 255, 0.2));
+		}
+
+		.brand-copy {
+			display: flex;
+			flex-direction: column;
+			line-height: 1.05;
+		}
+
+		.brand-copy strong {
+			font-size: 1rem;
+			background: linear-gradient(90deg, #ffffff, var(--boxlang-primary), var(--boxlang-secondary));
+			-webkit-background-clip: text;
+			-webkit-text-fill-color: transparent;
+			background-clip: text;
+		}
+
+		.brand-copy small {
+			color: var(--boxlang-text-muted);
+			font-size: 0.73rem;
+			letter-spacing: 0.08em;
+			text-transform: uppercase;
+		}
+
+		.welcome-section {
+			background:
+				linear-gradient(145deg, rgba(0, 219, 255, 0.1), rgba(0, 255, 117, 0.06)),
+				var(--boxlang-surface);
+			border: 1px solid var(--boxlang-border);
+			border-radius: 24px;
+			padding: 3rem;
+			margin-bottom: 2rem;
+			box-shadow: 0 24px 60px var(--boxlang-shadow);
+			overflow: hidden;
+			position: relative;
+		}
+
+		.welcome-section::after {
+			content: "";
+			position: absolute;
+			width: 20rem;
+			height: 20rem;
+			right: -7rem;
+			top: -8rem;
+			background: radial-gradient(circle, rgba(0, 219, 255, 0.2) 0%, rgba(0, 219, 255, 0) 68%);
+			pointer-events: none;
+		}
+
+		.hero-grid {
+			display: grid;
+			grid-template-columns: minmax(0, 1.2fr) minmax(18rem, 0.8fr);
+			gap: 2rem;
+			align-items: center;
+		}
+
+		.hero-logo-panel {
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			background: linear-gradient(160deg, rgba(255, 255, 255, 0.04), rgba(0, 219, 255, 0.09));
+			border: 1px solid rgba(255, 255, 255, 0.08);
+			border-radius: 24px;
+			padding: 2rem;
+			min-height: 100%;
+		}
+
+		.hero-logo {
+			width: min(100%, 24rem);
+			height: auto;
+			filter: drop-shadow(0 0 30px rgba(0, 219, 255, 0.22));
+		}
+
+		.hero-badge {
+			display: inline-flex;
+			align-items: center;
+			gap: 0.55rem;
+			padding: 0.55rem 0.95rem;
+			border: 1px solid rgba(0, 255, 117, 0.22);
+			border-radius: 999px;
+			background: rgba(0, 255, 117, 0.08);
+			color: var(--boxlang-glow);
+			font-size: 0.85rem;
+			font-weight: 600;
+			letter-spacing: 0.02em;
+			margin-bottom: 1rem;
+		}
+
+		.welcome-section h1 {
+			background: linear-gradient(90deg, #ffffff 0%, var(--boxlang-primary) 45%, var(--boxlang-secondary) 100%);
+			-webkit-background-clip: text;
+			-webkit-text-fill-color: transparent;
+			background-clip: text;
+			font-weight: 700;
+			line-height: 1.05;
+			max-width: 12ch;
+		}
+
+		.lead {
+			color: var(--boxlang-text);
+		}
+
+		.text-muted {
+			color: var(--boxlang-text-muted) !important;
+		}
+
+		.card {
+			background: var(--boxlang-surface);
+			border: 1px solid var(--boxlang-border);
+			border-radius: 24px;
+			box-shadow: 0 18px 48px rgba(0, 0, 0, 0.18);
+			transition: all 0.3s ease;
+			backdrop-filter: blur(10px);
+		}
+
+		.card:hover {
+			transform: translateY(-4px);
+			box-shadow: 0 24px 56px rgba(0, 0, 0, 0.24);
+		}
+
+		.card-header {
+			background: linear-gradient(135deg, rgba(0, 219, 255, 0.24) 0%, rgba(0, 255, 117, 0.18) 100%);
+			border: none;
+			border-bottom: 1px solid var(--boxlang-border);
+			border-radius: 24px 24px 0 0;
+			color: white;
+			font-weight: 600;
+		}
+
+		.btn-primary {
+			background: linear-gradient(135deg, var(--boxlang-primary) 0%, var(--boxlang-secondary) 100%);
+			border-color: transparent;
+			color: #03222c;
+			font-weight: 600;
+			transition: all 0.3s ease;
+			box-shadow: 0 12px 24px rgba(0, 219, 255, 0.18);
+		}
+
+		.btn-primary:hover {
+			background: linear-gradient(135deg, #27e4ff 0%, #3fff9a 100%);
+			border-color: transparent;
+			transform: translateY(-2px);
+		}
+
+		.result-box {
+			background: rgba(0, 0, 0, 0.18);
+			border-left: 4px solid var(--boxlang-primary);
+			border-radius: 8px;
+			padding: 1.5rem;
+			margin-top: 1rem;
+		}
+
+		.result-box pre {
+			background: #02141b;
+			color: #f8f8f2;
+			padding: 1rem;
+			border-radius: 8px;
+			overflow-x: auto;
+		}
+
+		.spinner-border {
+			color: var(--boxlang-primary);
+		}
+
+		.badge-accent {
+			background: linear-gradient(135deg, rgba(0, 219, 255, 0.24), rgba(0, 255, 117, 0.28));
+			border: 1px solid rgba(0, 255, 117, 0.3);
+			color: var(--boxlang-text);
+			padding: 0.55rem 0.9rem;
+		}
+
+		.server-card {
+			background: var(--boxlang-surface-strong);
+			border: 1px solid var(--boxlang-border);
+			border-radius: 20px;
+			padding: 1.5rem;
+			margin-bottom: 1rem;
+			height: 100%;
+			box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+		}
+
+		.stat-item {
+			text-align: center;
+			padding: 1rem;
+			background: rgba(255, 255, 255, 0.03);
+			border: 1px solid rgba(255, 255, 255, 0.05);
+			border-radius: 16px;
+		}
+
+		.stat-item h4 {
+			color: var(--boxlang-secondary);
+			font-weight: 700;
+		}
+
+		.stat-item p {
+			color: var(--boxlang-text-muted);
+			margin-bottom: 0;
+		}
+
+		.input-group-text {
+			background: linear-gradient(135deg, rgba(0, 219, 255, 0.24) 0%, rgba(0, 255, 117, 0.24) 100%);
+			border: none;
+			color: white;
+		}
+
+		.form-control:focus {
+			border-color: var(--boxlang-primary);
+			box-shadow: 0 0 0 0.2rem rgba(0, 219, 255, 0.2);
+		}
+
+		.fade-in {
+			animation: fadeIn 0.5s ease-in;
+		}
+
+		@keyframes fadeIn {
+			from {
+				opacity: 0;
+				transform: translateY(10px);
+			}
+			to {
+				opacity: 1;
+				transform: translateY(0);
+			}
+		}
+
+		.loading-bar {
+			height: 3px;
+			background: linear-gradient(90deg, var(--boxlang-primary), var(--boxlang-secondary));
+			animation: loading 1.5s ease-in-out infinite;
+		}
+
+		@keyframes loading {
+			0%, 100% { width: 0; }
+			50% { width: 100%; }
+		}
+
+		.icon-box {
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			width: 50px;
+			height: 50px;
+			background: linear-gradient(135deg, rgba(0, 219, 255, 0.22) 0%, rgba(0, 255, 117, 0.18) 100%);
+			border: 1px solid rgba(255, 255, 255, 0.08);
+			border-radius: 14px;
+			color: white;
+			font-size: 1.5rem;
+		}
+
+		.section-note {
+			color: var(--boxlang-text-muted);
+			margin-bottom: 0;
+		}
+
+		.server-header {
+			display: flex;
+			align-items: flex-start;
+			justify-content: space-between;
+			gap: 1rem;
+			margin-bottom: 1rem;
+		}
+
+		.server-header h5 {
+			color: var(--boxlang-text);
+		}
+
+		.endpoint-link {
+			display: inline-flex;
+			align-items: center;
+			gap: 0.5rem;
+			margin-top: 1rem;
+			padding: 0.8rem 1rem;
+			border-radius: 14px;
+			border: 1px solid var(--boxlang-border-strong);
+			background: rgba(0, 255, 117, 0.08);
+			color: var(--boxlang-glow);
+			text-decoration: none;
+			font-weight: 600;
+			transition: transform 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
+		}
+
+		.endpoint-link:hover {
+			transform: translateY(-1px);
+			border-color: rgba(0, 219, 255, 0.44);
+			background: rgba(0, 219, 255, 0.1);
+			color: var(--boxlang-text);
+		}
+
+		.endpoint-text {
+			display: block;
+			margin-top: 0.75rem;
+			color: var(--boxlang-text-muted);
+			font-size: 0.85rem;
+			word-break: break-all;
+		}
+
+		.status-badge {
+			display: inline-flex;
+			align-items: center;
+			padding: 0.45rem 0.75rem;
+			border-radius: 999px;
+			background: rgba(0, 255, 117, 0.14);
+			border: 1px solid rgba(0, 255, 117, 0.28);
+			color: var(--boxlang-secondary);
+			font-weight: 600;
+			font-size: 0.8rem;
+		}
+
+		@media (max-width: 991.98px) {
+			.hero-grid {
+				grid-template-columns: 1fr;
+			}
+
+			.welcome-section h1 {
+				max-width: none;
+			}
+
+			.hero-logo-panel {
+				order: -1;
+			}
+		}
+
+		@media (max-width: 767.98px) {
+			.navbar-brand {
+				gap: 0.65rem;
+			}
+
+			.navbar-brand img {
+				height: 2rem;
+			}
+
+			.welcome-section {
+				padding: 2rem;
+			}
+
+			.hero-logo-panel {
+				padding: 1.5rem;
+			}
+
+			.brand-copy small {
+				display: none;
+			}
+		}
+	</style>
+</head>
+<bx:output>
+<body>
+	<nav class="navbar navbar-dark">
+		<div class="container-fluid">
+			<span class="navbar-brand">
+				<img src="layouts/logo-gradient-light.svg" alt="BoxLang logo">
+				<span class="brand-copy">
+					<strong>ColdBox</strong>
+					<small>MCP Server</small>
+				</span>
+			</span>
+		</div>
+	</nav>
+
+	<div class="container-fluid py-5">
+		<div class="row mb-5">
+			<div class="col-lg-12">
+				<div class="welcome-section">
+					<div class="hero-grid">
+						<div>
+							<span class="hero-badge">
+								<i class="bi bi-diagram-3-fill"></i> Model Context Protocol
+							</span>
+							<h1 class="display-4 mb-3">ColdBox MCP Server Running</h1>
+						</div>
+						<div class="hero-logo-panel">
+							<img class="hero-logo" src="layouts/logo-gradient-light.svg" alt="BoxLang AI logo">
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<div x-cloak x-data="mcpDemo()" class="row">
+			<div class="col-lg-12 mb-5">
+				<div class="card">
+					<div class="card-header">
+						<i class="bi bi-server"></i> MCP Servers & Statistics
+					</div>
+					<div class="card-body">
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
 </bx:output>
+</html>

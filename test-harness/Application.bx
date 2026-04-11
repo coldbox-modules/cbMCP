@@ -7,7 +7,7 @@ www.ortussolutions.com
 class{
 
 	// UPDATE THE NAME OF THE MODULE IN TESTING BELOW
-	request.MODULE_NAME = "cbAITools";
+	request.MODULE_NAME = "cbMCP";
 
 	// Application properties
 	this.name              = hash( getCurrentTemplatePath() );

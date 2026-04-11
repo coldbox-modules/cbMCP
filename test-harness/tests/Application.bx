@@ -6,9 +6,9 @@
 class{
 
 	// The name of the module used in cfmappings ,etc
-	request.MODULE_NAME = "cbAITools";
+	request.MODULE_NAME = "cbMCP";
 	// The directory name of the module on disk. Usually, it's the same as the module name
-	request.MODULE_PATH = "cbAITools";
+	request.MODULE_PATH = "cbMCP";
 
 	// APPLICATION CFC PROPERTIES
 	this.name 				= "#request.MODULE_NAME# Testing Suite";

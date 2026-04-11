@@ -6,23 +6,23 @@
 class {
 
 	// Module Properties
-	this.title 				= "cbAITools"
+	this.title 				= "cbMCP"
 	this.author 			= "Ortus Solutions"
 	this.webURL 			= "https://www.ortussolutions.com"
 	this.description 		= "A collection of AI powered tools for ColdBox."
 	this.version 			= "@build.version@+@build.number@"
 
 	// Model Namespace
-	this.modelNamespace		= "cbAITools"
+	this.modelNamespace		= "cbMCP"
 
 	// Engine Mapping
-	this.mapping			= "cbAITools"
+	this.mapping			= "cbMCP"
 
 	// Dependencies
 	this.dependencies 		= []
 
 	// URI Endpoint Prefix
-	this.entryPoint		= "cbai"
+	this.entryPoint		= "cbmcp"
 
 	/**
 	 * Configure Module
@@ -38,8 +38,8 @@ class {
 	function onLoad(){
 		// Register our MCP Server here
 		mcpServer(
-			name: "cbAITools",
-			description: "A collection of AI powered tools for ColdBox.",
+			name: "cbMCP",
+			description: "An MCP Server for ColdBox AI Tools",
 			version: "@build.version@+@build.number@",
 			cors: "*",
 			statsEnabled: true,
@@ -53,7 +53,7 @@ class {
 	 * Fired when the module is unregistered and unloaded
 	 */
 	function onUnload(){
-		aiService().removeServer( "cbAITools" )
+		aiService().removeServer( "cbMCP" )
 	}
 
 }

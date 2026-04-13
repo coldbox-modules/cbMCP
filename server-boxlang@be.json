@@ -26,6 +26,6 @@
 		"BOXLANG_DEBUG" : true
     },
     "scripts":{
-        "onServerInitialInstall":"install bx-esapi,bx-ai"
+        "onServerInitialInstall":"install bx-esapi,bx-ai@be"
     }
 }

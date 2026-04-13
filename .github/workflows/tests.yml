@@ -18,16 +18,16 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        cfengine: [ "boxlang@1", "boxlang@be" ]
+        cfengine: [ "boxlang@1" ]
         coldboxVersion: [ "^8.0.0" ]
         experimental: [ false ]
         # Experimental: ColdBox BE vs All Engines
         include:
           - coldboxVersion: "be"
-            cfengine: "boxlang@be"
-            experimental: true
-          - coldboxVersion: "be"
             cfengine: "boxlang@1"
+            experimental: true
+          - coldboxVersion: "^8.0.0"
+            cfengine: "boxlang@be"
             experimental: true
     steps:
       - name: Checkout Repository

@@ -451,320 +451,446 @@
 			</div>
 		</div>
 
-		<div x-cloak x-data="mcpDemo()" class="row">
-			<div class="col-lg-12 mb-5">
-				<div class="card">
-					<div class="card-header">
-						<i class="bi bi-server"></i> MCP Servers & Statistics
+		<!--- Collect MCP Server data --->
+		<bx:set mcpServer     = mcpServer( "cbMCP" ) />
+		<bx:set serverInfo    = mcpServer.getServerInfo() />
+		<bx:set statsSummary  = mcpServer.getStatsSummary() />
+		<bx:set tools         = mcpServer.listTools() />
+		<bx:set resources     = mcpServer.listResources() />
+		<bx:set prompts       = mcpServer.listPrompts() />
+		<bx:set detailedStats = mcpServer.getStats() />
+
+		<!--- ===== Server Identity + Stats Row ===== --->
+		<div class="row g-4 mb-5">
+
+			<!--- Server Identity Card --->
+			<div class="col-lg-5">
+				<div class="server-card h-100">
+					<div class="server-header">
+						<div>
+							<h5 class="mb-1">
+								<i class="bi bi-server me-2" style="color:var(--boxlang-primary)"></i>
+								<bx:output>#mcpServer.getServerName()#</bx:output>
+							</h5>
+							<p class="text-muted small mb-0"><bx:output>#mcpServer.getDescription()#</bx:output></p>
+						</div>
+						<span class="status-badge">
+							<i class="bi bi-check-circle-fill me-1"></i> Active
+						</span>
 					</div>
-					<div class="card-body">
 
-					<!-- Loading state -->
-					<div x-show="loading" class="text-center py-5">
-						<div class="spinner-border mb-3" role="status"></div>
-						<p class="text-muted">Loading MCP server information&hellip;</p>
+					<div class="row g-2 mt-2">
+						<div class="col-6">
+							<div class="stat-item">
+								<h4><bx:output>#tools.len()#</bx:output></h4>
+								<p><i class="bi bi-tools me-1"></i>Tools</p>
+							</div>
+						</div>
+						<div class="col-6">
+							<div class="stat-item">
+								<h4><bx:output>#resources.len()#</bx:output></h4>
+								<p><i class="bi bi-folder2 me-1"></i>Resources</p>
+							</div>
+						</div>
+						<div class="col-6">
+							<div class="stat-item">
+								<h4><bx:output>#prompts.len()#</bx:output></h4>
+								<p><i class="bi bi-chat-text me-1"></i>Prompts</p>
+							</div>
+						</div>
+						<div class="col-6">
+							<div class="stat-item">
+								<h4 class="text-truncate" style="font-size:0.85rem">
+									<bx:output>#serverInfo.protocolVersion ?: "2024-11-05"#</bx:output>
+								</h4>
+								<p><i class="bi bi-layers me-1"></i>Protocol</p>
+							</div>
+						</div>
 					</div>
 
-					<!-- Error state -->
-					<div x-show="!loading && error" class="alert" style="background:rgba(255,60,60,0.12);border:1px solid rgba(255,60,60,0.3);color:##ffaaaa;border-radius:14px;" x-text="'Error: ' + error"></div>
+					<div class="mt-3 d-flex flex-wrap gap-2 align-items-center">
+						<span class="badge badge-accent">
+							<i class="bi bi-tag me-1"></i>v<bx:output>#mcpServer.getVersion()#</bx:output>
+						</span>
+						<bx:if mcpServer.hasBasicAuth()>
+							<span class="badge badge-accent">
+								<i class="bi bi-lock-fill me-1"></i>Basic Auth
+							</span>
+						</bx:if>
+						<bx:if mcpServer.hasApiKeyProvider()>
+							<span class="badge badge-accent">
+								<i class="bi bi-key-fill me-1"></i>API Key Auth
+							</span>
+						</bx:if>
+						<bx:if mcpServer.isStatsEnabled()>
+							<span class="badge badge-accent">
+								<i class="bi bi-bar-chart-fill me-1"></i>Stats On
+							</span>
+						</bx:if>
+					</div>
 
-					<!-- Content -->
-					<div x-show="!loading && !error">
-
-						<!-- Server Info Banner -->
-						<div class="server-card mb-4" x-show="serverInfo">
-							<div class="server-header">
-								<div>
-									<h5 x-text="serverInfo ? serverInfo.name : ''"></h5>
-									<span class="text-muted" style="font-size:0.85rem" x-text="serverInfo ? serverInfo.description : ''"></span>
-								</div>
-								<div class="d-flex flex-column align-items-end gap-2">
-									<span class="status-badge"><i class="bi bi-circle-fill me-1" style="font-size:0.5rem"></i> Online</span>
-									<span class="badge badge-accent rounded-pill" x-text="serverInfo ? 'v' + serverInfo.version : ''"></span>
-									<span x-show="protocolVersion" class="text-muted" style="font-size:0.75rem" x-text="'Protocol: ' + protocolVersion"></span>
-								</div>
-							</div>
-							<div class="row g-3 mt-1">
-								<div class="col-6 col-md-3">
-									<div class="stat-item">
-										<h4 x-text="tools.length">0</h4>
-										<p>Tools</p>
-									</div>
-								</div>
-								<div class="col-6 col-md-3">
-									<div class="stat-item">
-										<h4 x-text="resources.length">0</h4>
-										<p>Resources</p>
-									</div>
-								</div>
-								<div class="col-6 col-md-3">
-									<div class="stat-item">
-										<h4 x-text="prompts.length">0</h4>
-										<p>Prompts</p>
-									</div>
-								</div>
-								<div class="col-6 col-md-3">
-									<div class="stat-item">
-										<h4 x-text="stats ? stats.totalRequests : '—'">—</h4>
-										<p>Total Requests</p>
-									</div>
-								</div>
-							</div>
-							<a class="endpoint-link" href="/cbmcp/" target="_blank">
-								<i class="bi bi-link-45deg"></i> /cbmcp/ <i class="bi bi-box-arrow-up-right ms-1" style="font-size:0.8rem"></i>
-							</a>
-						</div>
-
-						<!-- Tabs -->
-						<ul class="nav nav-pills mb-4" style="border-bottom:1px solid var(--boxlang-border);padding-bottom:0.75rem;gap:0.5rem;">
-							<li class="nav-item">
-								<button class="nav-link" :class="{ active: activeTab === 'tools' }" @click="activeTab = 'tools'">
-									<i class="bi bi-tools me-1"></i> Tools <span class="badge ms-1 rounded-pill" style="background:rgba(255,255,255,0.12)" x-text="tools.length"></span>
-								</button>
-							</li>
-							<li class="nav-item">
-								<button class="nav-link" :class="{ active: activeTab === 'resources' }" @click="activeTab = 'resources'">
-									<i class="bi bi-folder2-open me-1"></i> Resources <span class="badge ms-1 rounded-pill" style="background:rgba(255,255,255,0.12)" x-text="resources.length"></span>
-								</button>
-							</li>
-							<li class="nav-item">
-								<button class="nav-link" :class="{ active: activeTab === 'prompts' }" @click="activeTab = 'prompts'">
-									<i class="bi bi-chat-left-text me-1"></i> Prompts <span class="badge ms-1 rounded-pill" style="background:rgba(255,255,255,0.12)" x-text="prompts.length"></span>
-								</button>
-							</li>
-							<li class="nav-item">
-								<button class="nav-link" :class="{ active: activeTab === 'stats' }" @click="activeTab = 'stats'">
-									<i class="bi bi-bar-chart-line me-1"></i> Statistics
-								</button>
-							</li>
-						</ul>
-
-						<!-- Tools Panel -->
-						<div x-show="activeTab === 'tools'">
-							<template x-if="tools.length === 0">
-								<p class="section-note"><i class="bi bi-info-circle me-1"></i> No tools registered.</p>
-							</template>
-							<div class="row g-3">
-								<template x-for="tool in tools" :key="tool.name">
-									<div class="col-md-6 col-xl-4">
-										<div class="server-card h-100 fade-in">
-											<div class="d-flex align-items-center gap-2 mb-2">
-												<div class="icon-box"><i class="bi bi-lightning-charge-fill"></i></div>
-												<h6 class="mb-0" x-text="tool.name" style="color:var(--boxlang-primary)"></h6>
-											</div>
-											<p class="text-muted mb-2" style="font-size:0.875rem" x-text="tool.description"></p>
-											<template x-if="tool.inputSchema && tool.inputSchema.properties">
-												<div>
-													<p class="mb-1" style="font-size:0.78rem;color:var(--boxlang-text-muted);text-transform:uppercase;letter-spacing:0.06em">Parameters</p>
-													<div class="d-flex flex-wrap gap-1">
-														<template x-for="[param, schema] in Object.entries(tool.inputSchema.properties)" :key="param">
-															<span class="badge badge-accent" x-text="param + (tool.inputSchema.required && tool.inputSchema.required.includes(param) ? ' *' : '')"></span>
-														</template>
-													</div>
-												</div>
-											</template>
-										</div>
-									</div>
-								</template>
-							</div>
-						</div>
-
-						<!-- Resources Panel -->
-						<div x-show="activeTab === 'resources'">
-							<template x-if="resources.length === 0">
-								<p class="section-note"><i class="bi bi-info-circle me-1"></i> No resources registered.</p>
-							</template>
-							<div class="row g-3">
-								<template x-for="resource in resources" :key="resource.uri">
-									<div class="col-md-6 col-xl-4">
-										<div class="server-card h-100 fade-in">
-											<div class="d-flex align-items-center gap-2 mb-2">
-												<div class="icon-box"><i class="bi bi-folder2-open"></i></div>
-												<h6 class="mb-0" x-text="resource.name" style="color:var(--boxlang-primary)"></h6>
-											</div>
-											<p class="text-muted mb-2" style="font-size:0.875rem" x-text="resource.description"></p>
-											<span class="badge badge-accent" x-text="resource.uri"></span>
-											<span x-show="resource.mimeType" class="badge ms-1" style="background:rgba(0,219,255,0.12);border:1px solid rgba(0,219,255,0.2);color:var(--boxlang-primary)" x-text="resource.mimeType"></span>
-										</div>
-									</div>
-								</template>
-							</div>
-						</div>
-
-						<!-- Prompts Panel -->
-						<div x-show="activeTab === 'prompts'">
-							<template x-if="prompts.length === 0">
-								<p class="section-note"><i class="bi bi-info-circle me-1"></i> No prompts registered.</p>
-							</template>
-							<div class="row g-3">
-								<template x-for="prompt in prompts" :key="prompt.name">
-									<div class="col-md-6 col-xl-4">
-										<div class="server-card h-100 fade-in">
-											<div class="d-flex align-items-center gap-2 mb-2">
-												<div class="icon-box"><i class="bi bi-chat-left-text"></i></div>
-												<h6 class="mb-0" x-text="prompt.name" style="color:var(--boxlang-primary)"></h6>
-											</div>
-											<p class="text-muted mb-2" style="font-size:0.875rem" x-text="prompt.description"></p>
-											<template x-if="prompt.arguments && prompt.arguments.length">
-												<div>
-													<p class="mb-1" style="font-size:0.78rem;color:var(--boxlang-text-muted);text-transform:uppercase;letter-spacing:0.06em">Arguments</p>
-													<div class="d-flex flex-wrap gap-1">
-														<template x-for="arg in prompt.arguments" :key="arg.name">
-															<span class="badge badge-accent" x-text="arg.name + (arg.required ? ' *' : '')"></span>
-														</template>
-													</div>
-												</div>
-											</template>
-										</div>
-									</div>
-								</template>
-							</div>
-						</div>
-
-						<!-- Statistics Panel -->
-						<div x-show="activeTab === 'stats'">
-							<template x-if="!stats">
-								<p class="section-note"><i class="bi bi-info-circle me-1"></i> Statistics not available.</p>
-							</template>
-							<div x-show="stats" class="row g-3">
-								<div class="col-6 col-md-4 col-lg-2">
-									<div class="stat-item">
-										<h4 x-text="stats ? stats.totalRequests : '—'"></h4>
-										<p>Total Requests</p>
-									</div>
-								</div>
-								<div class="col-6 col-md-4 col-lg-2">
-									<div class="stat-item">
-										<h4 x-text="stats ? stats.successRate + '%' : '—'"></h4>
-										<p>Success Rate</p>
-									</div>
-								</div>
-								<div class="col-6 col-md-4 col-lg-2">
-									<div class="stat-item">
-										<h4 x-text="stats ? stats.avgResponseTime + 'ms' : '—'"></h4>
-										<p>Avg Response</p>
-									</div>
-								</div>
-								<div class="col-6 col-md-4 col-lg-2">
-									<div class="stat-item">
-										<h4 x-text="stats ? stats.totalToolInvocations : '—'"></h4>
-										<p>Tool Invocations</p>
-									</div>
-								</div>
-								<div class="col-6 col-md-4 col-lg-2">
-									<div class="stat-item">
-										<h4 x-text="stats ? stats.totalResourceReads : '—'"></h4>
-										<p>Resource Reads</p>
-									</div>
-								</div>
-								<div class="col-6 col-md-4 col-lg-2">
-									<div class="stat-item">
-										<h4 x-text="stats ? stats.totalErrors : '—'"></h4>
-										<p>Errors</p>
-									</div>
-								</div>
-								<div class="col-6 col-md-4 col-lg-2">
-									<div class="stat-item">
-										<h4 x-text="stats ? Math.round( stats.uptime / 1000 ) + 's' : '—'"></h4>
-										<p>Uptime</p>
-									</div>
-								</div>
-								<div class="col-6 col-md-4 col-lg-2">
-									<div class="stat-item">
-										<h4 x-text="stats ? stats.totalPromptGenerations : '—'"></h4>
-										<p>Prompt Generations</p>
-									</div>
-								</div>
-							</div>
-						</div>
-
-					</div><!-- /content -->
-
+					<a href="/cbmcp" class="endpoint-link">
+						<i class="bi bi-link-45deg"></i> MCP Endpoint
+						<code class="endpoint-text">/cbmcp</code>
+					</a>
 				</div>
+			</div>
+
+			<!--- Stats Counters --->
+			<div class="col-lg-7">
+				<div class="row g-3 h-100">
+					<div class="col-sm-6">
+						<div class="server-card h-100 text-center">
+							<div class="icon-box mx-auto mb-3">
+								<i class="bi bi-arrow-left-right"></i>
+							</div>
+							<h3 style="color:var(--boxlang-primary)">
+								<bx:output>#statsSummary.totalRequests#</bx:output>
+							</h3>
+							<p class="text-muted mb-1">Total Requests</p>
+							<small class="text-muted">
+								<i class="bi bi-check-lg" style="color:var(--boxlang-secondary)"></i>
+								<bx:output>#numberFormat( statsSummary.successRate, "0.0" )#</bx:output>% success
+							</small>
+						</div>
+					</div>
+					<div class="col-sm-6">
+						<div class="server-card h-100 text-center">
+							<div class="icon-box mx-auto mb-3">
+								<i class="bi bi-lightning-charge"></i>
+							</div>
+							<h3 style="color:var(--boxlang-secondary)">
+								<bx:output>#numberFormat( statsSummary.avgResponseTime, "0" )#</bx:output>
+								<small style="font-size:0.45em; vertical-align:middle"> ms</small>
+							</h3>
+							<p class="text-muted mb-1">Avg Response Time</p>
+							<small class="text-muted">
+								<i class="bi bi-clock me-1"></i>Up
+								<bx:output>#numberFormat( statsSummary.uptime / 1000 / 60, "0" )#</bx:output>m
+							</small>
+						</div>
+					</div>
+					<div class="col-sm-6">
+						<div class="server-card h-100 text-center">
+							<div class="icon-box mx-auto mb-3">
+								<i class="bi bi-tools"></i>
+							</div>
+							<h3 style="color:var(--boxlang-glow)">
+								<bx:output>#statsSummary.totalToolInvocations#</bx:output>
+							</h3>
+							<p class="text-muted mb-1">Tool Invocations</p>
+							<small class="text-muted">
+								<i class="bi bi-collection me-1"></i>
+								<bx:output>#statsSummary.totalResourceReads#</bx:output> resource reads
+							</small>
+						</div>
+					</div>
+					<div class="col-sm-6">
+						<div class="server-card h-100 text-center">
+							<div class="icon-box mx-auto mb-3"
+								style="background:linear-gradient(135deg,rgba(255,80,80,0.18),rgba(255,140,0,0.14))">
+								<i class="bi bi-exclamation-triangle"></i>
+							</div>
+							<h3 style="color:<bx:output>#statsSummary.totalErrors GT 0 ? '##ff6b6b' : 'var(--boxlang-secondary)'#</bx:output>">
+								<bx:output>#statsSummary.totalErrors#</bx:output>
+							</h3>
+							<p class="text-muted mb-1">Errors</p>
+							<bx:if len( statsSummary.lastRequestAt )>
+								<small class="text-muted">
+									<i class="bi bi-clock-history me-1"></i>Last:
+									<bx:output>#timeFormat( statsSummary.lastRequestAt, "HH:mm:ss" )#</bx:output>
+								</small>
+							</bx:if>
+						</div>
+					</div>
 				</div>
 			</div>
 		</div>
+
+		<!--- ===== Tools Section ===== --->
+		<bx:if tools.len() GT 0>
+			<div class="row mb-3">
+				<div class="col-12">
+					<h4 class="mb-0" style="color:var(--boxlang-primary)">
+						<i class="bi bi-tools me-2"></i>Registered Tools
+						<span class="badge badge-accent ms-2" style="font-size:0.7rem;vertical-align:middle">
+							<bx:output>#tools.len()#</bx:output>
+						</span>
+					</h4>
+					<p class="section-note small mt-1">All tools exposed via the MCP endpoint</p>
+				</div>
+			</div>
+			<div class="row g-3 mb-5">
+				<bx:loop array="#tools#" item="tool">
+					<div class="col-md-6 col-xl-4">
+						<div class="server-card h-100">
+							<div class="d-flex align-items-start gap-3 mb-2">
+								<div class="icon-box flex-shrink-0" style="width:42px;height:42px;font-size:1.1rem">
+									<i class="bi bi-braces"></i>
+								</div>
+								<div class="flex-grow-1 overflow-hidden">
+									<h6 class="mb-0" style="color:var(--boxlang-primary);word-break:break-all">
+										<bx:output>#tool.name#</bx:output>
+									</h6>
+									<bx:if structKeyExists( tool, "description" ) AND len( tool.description )>
+										<p class="text-muted small mb-0 mt-1">
+											<bx:output>#tool.description#</bx:output>
+										</p>
+									</bx:if>
+								</div>
+							</div>
+							<!--- Parameters from inputSchema --->
+							<bx:if structKeyExists( tool, "inputSchema" )
+								AND structKeyExists( tool.inputSchema, "properties" )
+								AND tool.inputSchema.properties.count() GT 0>
+								<div class="mt-2 pt-2" style="border-top:1px solid rgba(255,255,255,0.06)">
+									<small class="text-muted d-block mb-1">
+										<i class="bi bi-list-ul me-1"></i>Parameters:
+									</small>
+									<bx:loop collection="#tool.inputSchema.properties#" item="paramName">
+										<bx:set paramDef = tool.inputSchema.properties[ paramName ] />
+										<span class="badge badge-accent me-1 mb-1" style="font-size:0.68rem">
+											<bx:output>#paramName#</bx:output>
+											<bx:if structKeyExists( paramDef, "type" )>
+												<span class="ms-1 opacity-60">
+													<bx:output>#paramDef.type#</bx:output>
+												</span>
+											</bx:if>
+											<bx:if structKeyExists( tool.inputSchema, "required" )
+												AND isArray( tool.inputSchema.required )
+												AND tool.inputSchema.required.findNoCase( paramName ) GT 0>
+												<i class="bi bi-asterisk ms-1" title="required" style="font-size:0.5rem"></i>
+											</bx:if>
+										</span>
+									</bx:loop>
+								</div>
+							<bx:else>
+								<small class="text-muted">
+									<i class="bi bi-dash-circle me-1"></i>No parameters
+								</small>
+							</bx:if>
+						</div>
+					</div>
+				</bx:loop>
+			</div>
+		</bx:if>
+
+		<!--- ===== Resources Section ===== --->
+		<bx:if resources.len() GT 0>
+			<div class="row mb-3">
+				<div class="col-12">
+					<h4 class="mb-0" style="color:var(--boxlang-primary)">
+						<i class="bi bi-folder2-open me-2"></i>Resources
+						<span class="badge badge-accent ms-2" style="font-size:0.7rem;vertical-align:middle">
+							<bx:output>#resources.len()#</bx:output>
+						</span>
+					</h4>
+				</div>
+			</div>
+			<div class="row g-3 mb-5">
+				<bx:loop array="#resources#" item="resource">
+					<div class="col-md-6 col-xl-4">
+						<div class="server-card h-100">
+							<div class="d-flex align-items-center gap-3">
+								<div class="icon-box flex-shrink-0" style="width:42px;height:42px;font-size:1.1rem">
+									<i class="bi bi-file-earmark-text"></i>
+								</div>
+								<div class="overflow-hidden">
+									<h6 class="mb-0 text-truncate" style="color:var(--boxlang-secondary)">
+										<bx:output>#resource.name ?: resource.uri#</bx:output>
+									</h6>
+									<small class="text-muted text-truncate d-block">
+										<bx:output>#resource.uri#</bx:output>
+									</small>
+									<bx:if structKeyExists( resource, "mimeType" ) AND len( resource.mimeType )>
+										<span class="badge badge-accent mt-1" style="font-size:0.65rem">
+											<bx:output>#resource.mimeType#</bx:output>
+										</span>
+									</bx:if>
+								</div>
+							</div>
+						</div>
+					</div>
+				</bx:loop>
+			</div>
+		</bx:if>
+
+		<!--- ===== Prompts Section ===== --->
+		<bx:if prompts.len() GT 0>
+			<div class="row mb-3">
+				<div class="col-12">
+					<h4 class="mb-0" style="color:var(--boxlang-primary)">
+						<i class="bi bi-chat-square-text me-2"></i>Prompts
+						<span class="badge badge-accent ms-2" style="font-size:0.7rem;vertical-align:middle">
+							<bx:output>#prompts.len()#</bx:output>
+						</span>
+					</h4>
+				</div>
+			</div>
+			<div class="row g-3 mb-5">
+				<bx:loop array="#prompts#" item="prompt">
+					<div class="col-md-6 col-xl-4">
+						<div class="server-card h-100">
+							<div class="d-flex align-items-start gap-3">
+								<div class="icon-box flex-shrink-0" style="width:42px;height:42px;font-size:1.1rem">
+									<i class="bi bi-chat-text"></i>
+								</div>
+								<div>
+									<h6 class="mb-0" style="color:var(--boxlang-secondary)">
+										<bx:output>#prompt.name#</bx:output>
+									</h6>
+									<bx:if structKeyExists( prompt, "description" ) AND len( prompt.description )>
+										<p class="text-muted small mb-0 mt-1">
+											<bx:output>#prompt.description#</bx:output>
+										</p>
+									</bx:if>
+									<bx:if structKeyExists( prompt, "arguments" ) AND isArray( prompt.arguments ) AND prompt.arguments.len() GT 0>
+										<div class="mt-2">
+											<bx:loop array="#prompt.arguments#" item="arg">
+												<span class="badge badge-accent me-1" style="font-size:0.68rem">
+													<bx:output>#arg.name#</bx:output>
+												</span>
+											</bx:loop>
+										</div>
+									</bx:if>
+								</div>
+							</div>
+						</div>
+					</div>
+				</bx:loop>
+			</div>
+		</bx:if>
+
+		<!--- ===== Detailed Stats (only when there's data) ===== --->
+		<bx:if detailedStats.requests.total GT 0>
+			<div class="row mb-3">
+				<div class="col-12">
+					<h4 class="mb-0" style="color:var(--boxlang-primary)">
+						<i class="bi bi-bar-chart-line me-2"></i>Request Breakdown
+					</h4>
+					<p class="section-note small mt-1">Live request and tool invocation metrics</p>
+				</div>
+			</div>
+			<div class="row g-4 mb-5">
+
+				<!--- Requests by Method --->
+				<div class="col-lg-6">
+					<div class="server-card h-100">
+						<h6 class="mb-3" style="color:var(--boxlang-glow)">
+							<i class="bi bi-list-ul me-2"></i>By JSON-RPC Method
+						</h6>
+						<bx:if detailedStats.requests.byMethod.count() GT 0>
+							<bx:loop collection="#detailedStats.requests.byMethod#" item="method">
+								<bx:set methodCount = detailedStats.requests.byMethod[ method ] />
+								<bx:set pct = numberFormat( methodCount / detailedStats.requests.total * 100, "0" ) />
+								<div class="d-flex justify-content-between align-items-center mb-1">
+									<code style="color:var(--boxlang-primary);font-size:0.83rem">
+										<bx:output>#method#</bx:output>
+									</code>
+									<span class="badge badge-accent">
+										<bx:output>#methodCount#</bx:output> calls
+									</span>
+								</div>
+								<div class="progress mb-3" style="height:5px;background:rgba(255,255,255,0.07);border-radius:4px">
+									<div class="progress-bar"
+										style="width:#pct#%;background:linear-gradient(90deg,var(--boxlang-primary),var(--boxlang-secondary));border-radius:4px">
+									</div>
+								</div>
+							</bx:loop>
+						<bx:else>
+							<p class="text-muted small">No method data yet.</p>
+						</bx:if>
+
+						<div class="mt-3 pt-3" style="border-top:1px solid rgba(255,255,255,0.06)">
+							<div class="row g-2 text-center">
+								<div class="col-4">
+									<small class="text-muted d-block">Min</small>
+									<strong style="color:var(--boxlang-text)">
+										<bx:output>#numberFormat( detailedStats.requests.minResponseTime, "0" )#</bx:output>ms
+									</strong>
+								</div>
+								<div class="col-4">
+									<small class="text-muted d-block">Avg</small>
+									<strong style="color:var(--boxlang-secondary)">
+										<bx:output>#numberFormat( detailedStats.requests.avgResponseTime, "0" )#</bx:output>ms
+									</strong>
+								</div>
+								<div class="col-4">
+									<small class="text-muted d-block">Max</small>
+									<strong style="color:var(--boxlang-text)">
+										<bx:output>#numberFormat( detailedStats.requests.maxResponseTime, "0" )#</bx:output>ms
+									</strong>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<!--- Tool Invocations --->
+				<div class="col-lg-6">
+					<div class="server-card h-100">
+						<h6 class="mb-3" style="color:var(--boxlang-glow)">
+							<i class="bi bi-tools me-2"></i>Tool Invocations
+						</h6>
+						<bx:if detailedStats.tools.byTool.count() GT 0>
+							<bx:loop collection="#detailedStats.tools.byTool#" item="toolName">
+								<bx:set toolData = detailedStats.tools.byTool[ toolName ] />
+								<bx:set totalInvocations = max( detailedStats.tools.totalInvocations, 1 ) />
+								<bx:set pct = numberFormat( toolData.count / totalInvocations * 100, "0" ) />
+								<div class="d-flex justify-content-between align-items-center mb-1">
+									<code style="color:var(--boxlang-secondary);font-size:0.83rem">
+										<bx:output>#toolName#</bx:output>
+									</code>
+									<div class="text-end">
+										<span class="badge badge-accent me-1">
+											<bx:output>#toolData.count#</bx:output>×
+										</span>
+										<small class="text-muted">
+											<bx:output>#numberFormat( toolData.avgTime, "0" )#</bx:output>ms avg
+										</small>
+									</div>
+								</div>
+								<div class="progress mb-3" style="height:5px;background:rgba(255,255,255,0.07);border-radius:4px">
+									<div class="progress-bar"
+										style="width:#pct#%;background:linear-gradient(90deg,var(--boxlang-secondary),var(--boxlang-glow));border-radius:4px">
+									</div>
+								</div>
+							</bx:loop>
+
+							<div class="mt-3 pt-3" style="border-top:1px solid rgba(255,255,255,0.06)">
+								<div class="row g-2 text-center">
+									<div class="col-4">
+										<small class="text-muted d-block">Min</small>
+										<strong style="color:var(--boxlang-text)">
+											<bx:output>#numberFormat( detailedStats.tools.minExecutionTime, "0" )#</bx:output>ms
+										</strong>
+									</div>
+									<div class="col-4">
+										<small class="text-muted d-block">Avg</small>
+										<strong style="color:var(--boxlang-secondary)">
+											<bx:output>#numberFormat( detailedStats.tools.avgExecutionTime, "0" )#</bx:output>ms
+										</strong>
+									</div>
+									<div class="col-4">
+										<small class="text-muted d-block">Max</small>
+										<strong style="color:var(--boxlang-text)">
+											<bx:output>#numberFormat( detailedStats.tools.maxExecutionTime, "0" )#</bx:output>ms
+										</strong>
+									</div>
+								</div>
+							</div>
+						<bx:else>
+							<p class="text-muted small">No tool invocations yet.</p>
+						</bx:if>
+					</div>
+				</div>
+
+			</div>
+		</bx:if>
+
 	</div>
 
 	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-	<script>
-		function mcpDemo() {
-			return {
-				loading: true,
-				error: null,
-				serverInfo: null,
-				protocolVersion: null,
-				capabilities: null,
-				tools: [],
-				resources: [],
-				prompts: [],
-				stats: null,
-				activeTab: 'tools',
-
-				async init() {
-					try {
-						await this.loadServerInfo();
-						await Promise.all( [
-							this.loadTools(),
-							this.loadResources(),
-							this.loadPrompts(),
-							this.loadStats()
-						] );
-					} catch ( e ) {
-						this.error = e.message;
-					} finally {
-						this.loading = false;
-					}
-				},
-
-				async loadServerInfo() {
-					const res = await fetch( '/cbmcp/' );
-					const data = await res.json();
-					if ( data.result ) {
-						this.serverInfo     = data.result.serverInfo ?? null;
-						this.protocolVersion = data.result.protocolVersion ?? null;
-						this.capabilities   = data.result.capabilities ?? null;
-					} else if ( data.error ) {
-						throw new Error( data.error.message );
-					}
-				},
-
-				async loadTools() {
-					const data = await this.rpc( 'tools/list' );
-					if ( data.result ) this.tools = data.result.tools ?? [];
-				},
-
-				async loadResources() {
-					const data = await this.rpc( 'resources/list' );
-					if ( data.result ) this.resources = data.result.resources ?? [];
-				},
-
-				async loadPrompts() {
-					const data = await this.rpc( 'prompts/list' );
-					if ( data.result ) this.prompts = data.result.prompts ?? [];
-				},
-
-				async loadStats() {
-					const data = await this.rpc( 'stats/summary' );
-					if ( data.result ) this.stats = data.result;
-				},
-
-				async rpc( method, params = {} ) {
-					const res = await fetch( '/cbmcp/', {
-						method: 'POST',
-						headers: { 'Content-Type': 'application/json' },
-						body: JSON.stringify( {
-							jsonrpc: '2.0',
-							method: method,
-							params: params,
-							id: Date.now().toString()
-						} )
-					} );
-					return res.json();
-				}
-			};
-		}
-	</script>
 </body>
 </bx:output>
 </html>

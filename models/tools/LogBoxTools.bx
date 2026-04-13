@@ -1,0 +1,132 @@
+/**
+ * MCP Tools for LogBox logging framework introspection.
+ */
+class {
+
+	/**
+	 * Get LogBox general info: version, ID, registered logger names, and registered appender names.
+	 */
+	@AITool
+	@mcpTool
+	function get_logbox_info() {
+		var logBox = application.cbController.getLogBox()
+		return {
+			"version"   : logBox.getVersion(),
+			"logBoxID"  : logBox.getLogBoxID(),
+			"loggers"   : logBox.getCurrentLoggers().listToArray().sort( "textnocase" ),
+			"appenders" : logBox.getCurrentAppenders().listToArray().sort( "textnocase" )
+		}
+	}
+
+	/**
+	 * Get all registered loggers with their category, min/max log levels, and registered appender names.
+	 */
+	@AITool
+	@mcpTool
+	function get_loggers() {
+		var logBox    = application.cbController.getLogBox()
+		var registry  = logBox.getLoggerRegistry()
+		var result    = []
+
+		registry.each( ( category, logger ) => {
+			var appenderNames = logger.hasAppenders()
+				? logger.getAppenders().keyArray().sort( "textnocase" )
+				: []
+
+			result.append( {
+				"category"  : arguments.category,
+				"levelMin"  : logger.getLevelMin(),
+				"levelMax"  : logger.getLevelMax(),
+				"canDebug"  : logger.canDebug(),
+				"canInfo"   : logger.canInfo(),
+				"canWarn"   : logger.canWarn(),
+				"canError"  : logger.canError(),
+				"canFatal"  : logger.canFatal(),
+				"appenders" : appenderNames
+			} )
+		} )
+
+		return result
+	}
+
+	/**
+	 * Get details for a specific registered logger by category name.
+	 *
+	 * @category The logger category name (e.g. "ROOT" or a dotted class path)
+	 */
+	@AITool
+	@mcpTool
+	function get_logger( required string category ) {
+		var logBox   = application.cbController.getLogBox()
+		var registry = logBox.getLoggerRegistry()
+
+		if ( !registry.keyExists( arguments.category ) ) {
+			return "No logger found with category: #arguments.category#"
+		}
+
+		var logger        = registry[ arguments.category ]
+		var appenderNames = logger.hasAppenders()
+			? logger.getAppenders().keyArray().sort( "textnocase" )
+			: []
+
+		return {
+			"category"  : arguments.category,
+			"levelMin"  : logger.getLevelMin(),
+			"levelMax"  : logger.getLevelMax(),
+			"canDebug"  : logger.canDebug(),
+			"canInfo"   : logger.canInfo(),
+			"canWarn"   : logger.canWarn(),
+			"canError"  : logger.canError(),
+			"canFatal"  : logger.canFatal(),
+			"appenders" : appenderNames
+		}
+	}
+
+	/**
+	 * Get all registered appenders with their name, class, min/max log levels, and initialization status.
+	 */
+	@AITool
+	@mcpTool
+	function get_appenders() {
+		var logBox   = application.cbController.getLogBox()
+		var registry = logBox.getAppenderRegistry()
+		var result   = []
+
+		registry.each( ( name, appender ) => {
+			result.append( {
+				"name"        : arguments.name,
+				"class"       : getMetadata( arguments.appender ).name,
+				"levelMin"    : arguments.appender.getLevelMin(),
+				"levelMax"    : arguments.appender.getLevelMax(),
+				"initialized" : arguments.appender.isInitialized()
+			} )
+		} )
+
+		return result
+	}
+
+	/**
+	 * Get the root logger details.
+	 */
+	@AITool
+	@mcpTool
+	function get_root_logger() {
+		var logger        = application.cbController.getLogBox().getRootLogger()
+		var appenderNames = logger.hasAppenders()
+			? logger.getAppenders().keyArray().sort( "textnocase" )
+			: []
+
+		return {
+			"category"  : "ROOT",
+			"levelMin"  : logger.getLevelMin(),
+			"levelMax"  : logger.getLevelMax(),
+			"canDebug"  : logger.canDebug(),
+			"canInfo"   : logger.canInfo(),
+			"canWarn"   : logger.canWarn(),
+			"canError"  : logger.canError(),
+			"canFatal"  : logger.canFatal(),
+			"appenders" : appenderNames
+		}
+	}
+
+}

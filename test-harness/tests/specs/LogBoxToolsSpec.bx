@@ -1,0 +1,135 @@
+class extends="coldbox.system.testing.BaseTestCase" {
+
+	/*********************************** LIFE CYCLE Methods ***********************************/
+
+	function beforeAll() {
+		super.beforeAll()
+		setup()
+	}
+
+	function afterAll() {
+		super.afterAll()
+	}
+
+	/*********************************** BDD SUITES ***********************************/
+
+	function run() {
+		describe( "LogBoxTools", function() {
+
+			beforeEach( function( currentSpec ) {
+				variables.tool = getInstance( "LogBoxTools@cbMCP" )
+			} )
+
+			// --- get_logbox_info ---
+			it( "can get logbox general info", function() {
+				var result = tool.get_logbox_info()
+				expect( result ).toBeStruct()
+				expect( result ).toHaveKey( "version" )
+				expect( result ).toHaveKey( "logBoxID" )
+				expect( result ).toHaveKey( "loggers" )
+				expect( result ).toHaveKey( "appenders" )
+				expect( result.version ).notToBeEmpty()
+				expect( result.logBoxID ).notToBeEmpty()
+			} )
+
+			it( "loggers and appenders fields are sorted arrays of strings", function() {
+				var result = tool.get_logbox_info()
+				expect( result.loggers ).toBeArray()
+				expect( result.appenders ).toBeArray()
+				expect( result.loggers.len() ).toBeGT( 0 )
+				result.loggers.each( ( name ) => {
+					expect( name ).toBeString()
+				} )
+			} )
+
+			// --- get_loggers ---
+			it( "can get all registered loggers", function() {
+				var result = tool.get_loggers()
+				expect( result ).toBeArray()
+				expect( result.len() ).toBeGT( 0 )
+			} )
+
+			it( "logger entries have expected keys", function() {
+				var result = tool.get_loggers()
+				var first  = result[ 1 ]
+				expect( first ).toHaveKey( "category" )
+				expect( first ).toHaveKey( "levelMin" )
+				expect( first ).toHaveKey( "levelMax" )
+				expect( first ).toHaveKey( "canDebug" )
+				expect( first ).toHaveKey( "canInfo" )
+				expect( first ).toHaveKey( "canWarn" )
+				expect( first ).toHaveKey( "canError" )
+				expect( first ).toHaveKey( "canFatal" )
+				expect( first ).toHaveKey( "appenders" )
+				expect( first.category ).toBeString()
+				expect( first.appenders ).toBeArray()
+			} )
+
+			// --- get_logger ---
+			it( "can get details for the ROOT logger by category name", function() {
+				var result = tool.get_logger( "ROOT" )
+				expect( result ).toBeStruct()
+				expect( result ).toHaveKey( "category" )
+				expect( result ).toHaveKey( "levelMin" )
+				expect( result ).toHaveKey( "levelMax" )
+				expect( result ).toHaveKey( "appenders" )
+				expect( result.category ).toBe( "ROOT" )
+			} )
+
+			it( "returns an error string for a non-existent logger category", function() {
+				var result = tool.get_logger( "__nonExistentCategory__XYZ__" )
+				expect( result ).toBeString()
+				expect( result ).toInclude( "No logger found" )
+			} )
+
+			// --- get_appenders ---
+			it( "can get all registered appenders", function() {
+				var result = tool.get_appenders()
+				expect( result ).toBeArray()
+				expect( result.len() ).toBeGT( 0 )
+			} )
+
+			it( "appender entries have expected keys", function() {
+				var result = tool.get_appenders()
+				var first  = result[ 1 ]
+				expect( first ).toHaveKey( "name" )
+				expect( first ).toHaveKey( "class" )
+				expect( first ).toHaveKey( "levelMin" )
+				expect( first ).toHaveKey( "levelMax" )
+				expect( first ).toHaveKey( "initialized" )
+				expect( first.name ).toBeString()
+				expect( first.class ).toBeString()
+				expect( first.initialized ).toBeBoolean()
+			} )
+
+			it( "appender names match logbox info appender list", function() {
+				var info          = tool.get_logbox_info()
+				var appenders     = tool.get_appenders()
+				var appenderNames = appenders.map( ( a ) => a.name ).sort( "textnocase" )
+				expect( appenderNames ).toBe( info.appenders )
+			} )
+
+			// --- get_root_logger ---
+			it( "can get the root logger", function() {
+				var result = tool.get_root_logger()
+				expect( result ).toBeStruct()
+				expect( result ).toHaveKey( "category" )
+				expect( result ).toHaveKey( "levelMin" )
+				expect( result ).toHaveKey( "levelMax" )
+				expect( result ).toHaveKey( "canDebug" )
+				expect( result ).toHaveKey( "appenders" )
+				expect( result.category ).toBe( "ROOT" )
+			} )
+
+			it( "root logger matches get_logger( ROOT ) result", function() {
+				var fromRoot   = tool.get_root_logger()
+				var fromLookup = tool.get_logger( "ROOT" )
+				expect( fromRoot.levelMin ).toBe( fromLookup.levelMin )
+				expect( fromRoot.levelMax ).toBe( fromLookup.levelMax )
+				expect( fromRoot.appenders ).toBe( fromLookup.appenders )
+			} )
+
+		} )
+	}
+
+}

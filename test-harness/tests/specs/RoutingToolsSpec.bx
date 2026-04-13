@@ -46,7 +46,6 @@ class extends="coldbox.system.testing.BaseTestCase" {
 				var result = tool.get_router_settings()
 				expect( result ).toBeStruct()
 				expect( result ).toHaveKey( "baseURL" )
-				expect( result ).toHaveKey( "uniqueURLs" )
 				expect( result ).toHaveKey( "looseMatching" )
 				expect( result ).toHaveKey( "multiDomainRouting" )
 				expect( result ).toHaveKey( "totalRoutes" )

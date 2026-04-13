@@ -15,87 +15,218 @@
 
 ----
 
-# Ortus ColdBox Module Template
+# cbMCP — ColdBox MCP Server
 
-This template can be used to create Ortus based ColdBox Modules.  To use, just click the `Use this Template` button in the github repository: https://github.com/coldbox-modules/module-template and run the setup task from where you cloned it.
+`cbMCP` is a ColdBox module that exposes your running ColdBox application as an **MCP (Model Context Protocol) server**. It gives AI clients (Claude Desktop, VS Code Copilot, Cursor, etc.) live, read-only introspection tools for the entire ColdBox ecosystem — routing, handlers, modules, WireBox, CacheBox, LogBox, schedulers, async executors, and more.
+
+## Requirements
+
+- **BoxLang** 1.x (recommended) or ColdBox 8+
+- **BoxLang AI Module**
+- `box` (CommandBox) for installation
+
+## Installation
 
 ```bash
-box task run taskFile=build/SetupTemplate
+box install bx-ai
+box install cbmcp
 ```
 
-The `SetupTemplate` task will ask you for your module name, id and description and configure the template for you! Enjoy!
+## Configuration
 
-## Directory Structure
+No extra configuration is required. Once the module is installed and your application boots, the MCP endpoint is live at:
 
-The root of the module is the root of the repository. Add all the necessary files your module will need.
+```
+http://<host>:<port>/cbmcp
+```
 
-* `.github/workflows` - These are the github actions to test and build the module via CI
-* `build` - This is the CommandBox task that builds the project.  Only modify if needed.  Most modules will never modify it. (Modify if needed)
-* `test-harness` - This is a ColdBox testing application, where you will add your testing files, specs etc.
-* `.cfformat.json` - A CFFormat using the Ortus Standards
-* `.cflintrc` - A CFLint configuration file according to Ortus Standards
-* `.editorconfig` - Smooth consistency between editors
-* `.gitattributes` - Git attributes
-* `.gitignore` - Basic ignores. Modify as needed.
-* `.markdownlint.json` - A linting file for markdown docs
-* `box.json` - The box.json for YOUR module.  Modify as needed.
-* `changelog.md` - A nice changelog tracking file
-* `ModuleConfig.cfc` - Your module's configuration. Modify as needed.
-* `readme.md` - Your module's readme. Modify as needed.
-* `server-xx@x.json` - A set of json files to configure the major engines your modules supports.
+The server auto-scans all tool classes under `cbMCP.models.tools` and registers every `@mcpTool`-annotated function.
 
-## Test Harness
+## Connecting an AI Client
 
-The test harness is created to bootstrap your working module into the application `afterAspectsLoad`.  This is done in the `config/ColdBox.cfc`.  It includes some key features:
+### Claude Desktop
 
-* `config` - Modify as needed
-* `tests` - All your testing specs should go here.  Please notice the commented out ORM fixtures.  Enable them if your module requires ORM
-* `.cfconfig.json` - A prepared cfconfig json file so your engine data is consistent.  Modify as needed.
-* `.env.sample` - An environment property file sample.  Copy and create a `.env` if your app requires it.
+Add the following entry to your `claude_desktop_config.json` (`~/Library/Application Support/Claude/claude_desktop_config.json` on macOS):
 
+```json
+{
+  "mcpServers": {
+    "cbMCP": {
+      "command": "npx",
+      "args": ["-y", "@depasquale/mcp-http-stdio-bridge", "--url", "http://127.0.0.1:<port>/cbmcp"]
+    }
+  }
+}
+```
 
-## API Docs
+Replace `<port>` with the port your ColdBox application is running on (e.g. `60299` during local development). The bridge package (`@depasquale/mcp-http-stdio-bridge`) is installed automatically via `npx` on first use — no manual install needed.
 
-The build task will take care of building API Docs using DocBox for you but **ONLY** for the `models` folder in your module.  If you want to document more then make sure you modify the `build/Build.cfc` task.
+**Example (local BoxLang dev server on port 60299):**
 
-## Github Actions Automation
+```json
+{
+  "mcpServers": {
+    "cbMCP": {
+      "command": "npx",
+      "args": ["-y", "@depasquale/mcp-http-stdio-bridge", "--url", "http://127.0.0.1:60299/cbmcp"]
+    }
+  }
+}
+```
 
-The github actions will clone, test, package, deploy your module to ForgeBox and the Ortus S3 accounts for API Docs and Artifacts.  So please make sure the following environment variables are set in your repository. ** Please note that most of them are already defined at the org level **
+After saving, restart Claude Desktop. The `cbMCP` server will appear in the tools panel.
 
-* `FORGEBOX_TOKEN` - The Ortus ForgeBox API Token
-* `AWS_ACCESS_KEY` - The travis user S3 account
-* `AWS_ACCESS_SECRET` - The travis secret S3
+### VS Code / GitHub Copilot
 
-> Please contact the admins in the `#infrastructure` channel for these credentials if needed
+Add to your `.vscode/mcp.json` (or user-level MCP settings):
 
-## Welcome to ColdBox
+```json
+{
+  "servers": {
+    "cbMCP": {
+      "type": "http",
+      "url": "http://127.0.0.1:<port>/cbmcp"
+    }
+  }
+}
+```
 
-ColdBox *Hierarchical* MVC is the de-facto enterprise-level [HMVC](https://en.wikipedia.org/wiki/Hierarchical_model%E2%80%93view%E2%80%93controller) framework for ColdFusion (CFML) developers. It's professionally backed, conventions-based, modular, highly extensible, and productive. Getting started with ColdBox is quick and painless.  ColdBox takes the pain out of development by giving you a standardized methodology for modern ColdFusion (CFML) development with features such as:
+### Any MCP-compatible client (HTTP/SSE transport)
 
-* [Conventions instead of configuration](https://coldbox.ortusbooks.com/getting-started/conventions)
-* [Modern URL routing](https://coldbox.ortusbooks.com/the-basics/routing)
-* [RESTFul APIs](https://coldbox.ortusbooks.com/the-basics/event-handlers/rendering-data)
-* [A hierarchical approach to MVC using ColdBox Modules](https://coldbox.ortusbooks.com/hmvc/modules)
-* [Event-driven programming](https://coldbox.ortusbooks.com/digging-deeper/interceptors)
-* [Async and Parallel programming constructs](https://coldbox.ortusbooks.com/digging-deeper/promises-async-programming)
-* [Integration & Unit Testing](https://coldbox.ortusbooks.com/testing/testing-coldbox-applications)
-* [Included dependency injection](https://wirebox.ortusbooks.com)
-* [Caching engine and API](https://cachebox.ortusbooks.com)
-* [Logging engine](https://logbox.ortusbooks.com)
-* [An extensive eco-system](https://forgebox.io)
-* Much More
+Point the client directly at the SSE endpoint:
+
+```
+http://<host>:<port>/cbmcp
+```
+
+---
+
+## Available Tools
+
+### System (`SystemTools`)
+
+| Tool | Description |
+|------|-------------|
+| `time_now` | Returns the server's current date/time (ISO 8601) |
+| `get_coldbox_settings` | Returns all ColdBox framework settings |
+| `get_runtime_info` | Engine name, version, app layout, and OS |
+| `get_application_structure` | Application directory layout (handlers, models, views, etc.) |
+| `get_setting( name )` | Returns a single ColdBox application setting by key |
+| `reinit_app` | Reinitialises the ColdBox application |
+
+### Handlers (`HandlerTools`)
+
+| Tool | Description |
+|------|-------------|
+| `get_handlers` | Lists all registered event handlers with their actions |
+| `get_handler( handlerName, [moduleName] )` | Returns metadata for a specific handler |
+
+### Routing (`RoutingTools`)
+
+| Tool | Description |
+|------|-------------|
+| `list_routes` | Lists all registered application routes |
+| `list_module_routes` | Lists which modules have routes registered |
+| `get_module_routes( moduleName )` | Returns routes registered by a specific module |
+| `get_router_settings` | Returns router configuration (default route, SSL, etc.) |
+
+### Modules (`ModuleTools`)
+
+| Tool | Description |
+|------|-------------|
+| `get_modules` | Returns full metadata for all registered modules |
+| `get_loaded_modules` | Returns a flat list of activated module names |
+| `get_module( moduleName )` | Returns metadata for a specific module |
+
+### WireBox (`WireBoxTools`)
+
+| Tool | Description |
+|------|-------------|
+| `get_wirebox_mappings` | Returns all registered DI mappings |
+| `has_mapping( name )` | Checks whether a mapping exists |
+| `get_mapping( name )` | Returns the full mapping definition for a binding |
+
+### CacheBox (`CacheBoxTools`)
+
+| Tool | Description |
+|------|-------------|
+| `get_caches` | Returns all registered cache providers with stats |
+| `get_cache_names` | Returns a flat list of cache provider names |
+| `get_cache_stats( cacheName )` | Returns hit/miss/size statistics for a cache |
+| `get_cache_keys( cacheName )` | Lists all keys currently in a cache |
+| `get_cache_size( cacheName )` | Returns the number of objects in a cache |
+| `get_cache_key_metadata( cacheName, objectKey )` | Returns metadata for a single cached entry |
+| `cache_key_exists( cacheName, objectKey )` | Checks whether a key exists in a cache |
+| `get_store_metadata_report( cacheName )` | Returns full store metadata for all entries |
+| `clear_all( cacheName )` | Clears all entries from a cache |
+| `clear_item( cacheName, objectKey )` | Clears a single entry by key |
+| `clear_all_events( cacheName, [async] )` | Clears all event-cached entries |
+| `clear_event( cacheName, eventSnippet, [queryString] )` | Clears a specific event cache entry |
+| `clear_event_multi( cacheName, eventSnippets, [queryString] )` | Clears multiple event cache entries |
+| `clear_all_views( cacheName, [async] )` | Clears all view-cached entries |
+| `clear_view( cacheName, viewSnippet )` | Clears a specific view cache entry |
+| `clear_view_multi( cacheName, viewSnippets )` | Clears multiple view cache entries |
+
+### LogBox (`LogBoxTools`)
+
+| Tool | Description |
+|------|-------------|
+| `get_logbox_info` | Returns LogBox version, ID, loggers, and appenders |
+| `get_loggers` | Returns all registered logger definitions |
+| `get_logger( category )` | Returns the logger definition for a category |
+| `get_appenders` | Returns all registered appender definitions |
+| `get_root_logger` | Returns the ROOT logger definition |
+| `read_log_entries( [appenderName], [limit=100] )` | Reads the last N entries from file-based appenders |
+| `get_last_error( [appenderName] )` | Finds the most recent ERROR or FATAL entry in log files |
+
+### Interceptors (`InterceptorTools`)
+
+| Tool | Description |
+|------|-------------|
+| `get_interceptors` | Returns all registered interceptors |
+| `get_interceptor_states` | Returns all registered interception points and their listeners |
+
+### Schedulers (`SchedulerTools`)
+
+| Tool | Description |
+|------|-------------|
+| `get_schedulers` | Returns all registered application schedulers and their tasks |
+| `get_scheduler( schedulerName )` | Returns metadata for a specific scheduler |
+| `get_task_stats( schedulerName, taskName )` | Returns execution stats for a specific task |
+| `run_task( schedulerName, taskName )` | Executes a scheduled task on demand |
+| `pause_task( schedulerName, taskName )` | Pauses a scheduled task |
+| `resume_task( schedulerName, taskName )` | Resumes a paused scheduled task |
+
+### Async (`AsyncTools`)
+
+| Tool | Description |
+|------|-------------|
+| `get_executors` | Returns all registered async executors with their stats |
+| `get_executor_names` | Returns a flat list of executor names |
+
+---
+
+## Resources
+
+`cbMCP` also exposes **MCP Resources** — ambient read-only context automatically injected into AI conversations:
+
+| URI | Description |
+|-----|-------------|
+| `coldbox://app/settings` | All active ColdBox application configuration settings |
+| `coldbox://app/modules` | All currently activated modules with key metadata |
+
+---
 
 ## Learning ColdBox
 
-ColdBox is the defacto standard for building modern ColdFusion (CFML) applications.  It has the most extensive [documentation](https://coldbox.ortusbooks.com) of all modern web application frameworks.
-
+ColdBox is the defacto standard for building modern ColdFusion (CFML) applications. It has the most extensive [documentation](https://coldbox.ortusbooks.com) of all modern web application frameworks.
 
 If you don't like reading so much, then you can try our video learning platform: [CFCasts (www.cfcasts.com)](https://www.cfcasts.com)
 
 ## Ortus Sponsors
 
-ColdBox is a professional open-source project and it is completely funded by the [community](https://patreon.com/ortussolutions) and [Ortus Solutions, Corp](https://www.ortussolutions.com).  Ortus Patreons get many benefits like a cfcasts account, a FORGEBOX Pro account and so much more.  If you are interested in becoming a sponsor, please visit our patronage page: [https://patreon.com/ortussolutions](https://patreon.com/ortussolutions)
+ColdBox is a professional open-source project and it is completely funded by the [community](https://patreon.com/ortussolutions) and [Ortus Solutions, Corp](https://www.ortussolutions.com). Ortus Patreons get many benefits like a cfcasts account, a FORGEBOX Pro account and so much more. If you are interested in becoming a sponsor, please visit our patronage page: [https://patreon.com/ortussolutions](https://patreon.com/ortussolutions)
 
 ### THE DAILY BREAD
 
- > "I am the way, and the truth, and the life; no one comes to the Father, but by me (JESUS)" Jn 14:1-12
+> "I am the way, and the truth, and the life; no one comes to the Father, but by me (JESUS)" Jn 14:1-12

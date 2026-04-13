@@ -129,4 +129,176 @@ class {
 		}
 	}
 
+	/**
+	 * Read the last N log entries from all file-based appenders, or a specific one.
+	 * Only FileAppender and RollingFileAppender instances are supported.
+	 *
+	 * @appenderName Optional name of a specific appender to read from. Reads all file-based appenders if omitted.
+	 * @limit        Maximum number of log entries to return per appender (default 100).
+	 */
+	@AITool
+	@mcpTool
+	function read_log_entries( string appenderName = "", numeric limit = 100 ) {
+		var logBox      = application.cbController.getLogBox()
+		var registry    = logBox.getAppenderRegistry()
+		var results     = []
+		var filterName  = arguments.appenderName
+		var maxEntries  = arguments.limit
+
+		registry.each( ( name, appender ) => {
+			// Skip if a specific appender was requested and this isn't it
+			if ( len( filterName ) && arguments.name != filterName ) {
+				return
+			}
+
+			// Only process file-based appenders
+			if ( !isInstanceOf( arguments.appender, "coldbox.system.logging.appenders.FileAppender" ) ) {
+				return
+			}
+
+			var logFile = arguments.appender.getLogFullpath()
+
+			if ( !fileExists( logFile ) ) {
+				results.append( {
+					"appenderName" : arguments.name,
+					"logFile"      : logFile,
+					"entries"      : [],
+					"note"         : "Log file does not exist yet"
+				} )
+				return
+			}
+
+			// Read and parse the log file
+			var rawLines = fileRead( logFile ).listToArray( char( 10 ) )
+			// Remove blank lines and the CSV header line
+			var dataLines = rawLines.filter( ( line ) => {
+				var trimmed = trim( arguments.line )
+				return len( trimmed ) && findNoCase( '"Severity"', trimmed ) != 1
+			} )
+
+			// Take the last N lines
+			var startIdx = max( 1, dataLines.len() - maxEntries + 1 )
+			var entries  = []
+			for ( var i = startIdx; i <= dataLines.len(); i++ ) {
+				entries.append( parseLogLine( dataLines[ i ] ) )
+			}
+
+			results.append( {
+				"appenderName" : arguments.name,
+				"logFile"      : logFile,
+				"entries"      : entries
+			} )
+		} )
+
+		if ( !results.len() ) {
+			if ( len( filterName ) ) {
+				return "No file-based appender found with name: #filterName#"
+			}
+			return "No file-based appenders are registered"
+		}
+
+		return results
+	}
+
+	/**
+	 * Read the last error (ERROR or FATAL severity) from all file-based appenders, or a specific one.
+	 * Only FileAppender and RollingFileAppender instances are supported.
+	 *
+	 * @appenderName Optional name of a specific appender to search. Searches all file-based appenders if omitted.
+	 */
+	@AITool
+	@mcpTool
+	function get_last_error( string appenderName = "" ) {
+		var logBox      = application.cbController.getLogBox()
+		var registry    = logBox.getAppenderRegistry()
+		var results     = []
+		var filterName  = arguments.appenderName
+
+		registry.each( ( name, appender ) => {
+			// Skip if a specific appender was requested and this isn't it
+			if ( len( filterName ) && arguments.name != filterName ) {
+				return
+			}
+
+			// Only process file-based appenders
+			if ( !isInstanceOf( arguments.appender, "coldbox.system.logging.appenders.FileAppender" ) ) {
+				return
+			}
+
+			var logFile = arguments.appender.getLogFullpath()
+
+			if ( !fileExists( logFile ) ) {
+				results.append( {
+					"appenderName" : arguments.name,
+					"logFile"      : logFile,
+					"entry"        : javacast( "null", "" ),
+					"note"         : "Log file does not exist yet"
+				} )
+				return
+			}
+
+			// Read all lines and scan in reverse for the last ERROR or FATAL
+			var rawLines  = fileRead( logFile ).listToArray( char( 10 ) )
+			var lastError = javacast( "null", "" )
+
+			for ( var i = rawLines.len(); i >= 1; i-- ) {
+				var trimmed = trim( rawLines[ i ] )
+				if ( !len( trimmed ) ) continue
+
+				// Fast check before full parse: line must contain "ERROR" or "FATAL"
+				if ( findNoCase( '"ERROR"', trimmed ) || findNoCase( '"FATAL"', trimmed ) ) {
+					var parsed   = parseLogLine( trimmed )
+					var severity = parsed.severity ?: ""
+					if ( severity == "ERROR" || severity == "FATAL" ) {
+						lastError = parsed
+						break
+					}
+				}
+			}
+
+			results.append( {
+				"appenderName" : arguments.name,
+				"logFile"      : logFile,
+				"entry"        : isNull( lastError ) ? {} : lastError,
+				"note"         : isNull( lastError ) ? "No ERROR or FATAL entries found" : ""
+			} )
+		} )
+
+		if ( !results.len() ) {
+			if ( len( filterName ) ) {
+				return "No file-based appender found with name: #filterName#"
+			}
+			return "No file-based appenders are registered"
+		}
+
+		return results
+	}
+
+	/**
+	 * Parse a single CSV log line written by FileAppender into a struct.
+	 * Expected format: "SEVERITY","AppenderName","MM/dd/yyyy","HH:mm:ss","category","message"
+	 *
+	 * @line The raw CSV log line to parse.
+	 */
+	private struct function parseLogLine( required string line ) {
+		// Strip surrounding whitespace and remove leading/trailing double-quote if the whole line is wrapped
+		var raw    = trim( arguments.line )
+		// Split on the CSV field separator pattern: ","
+		var parts  = raw.listToArray( '","' )
+		// Strip any remaining leading/trailing quote from the first and last tokens
+		if ( parts.len() ) {
+			parts[ 1 ]            = parts[ 1 ].reReplace( '^"', "" )
+			parts[ parts.len() ]  = parts[ parts.len() ].reReplace( '"$', "" )
+		}
+
+		return {
+			"severity" : parts.len() >= 1 ? trim( parts[ 1 ] ) : "",
+			"appender" : parts.len() >= 2 ? trim( parts[ 2 ] ) : "",
+			"date"     : parts.len() >= 3 ? trim( parts[ 3 ] ) : "",
+			"time"     : parts.len() >= 4 ? trim( parts[ 4 ] ) : "",
+			"category" : parts.len() >= 5 ? trim( parts[ 5 ] ) : "",
+			"message"  : parts.len() >= 6 ? trim( parts[ 6 ] ) : ""
+		}
+	}
+
 }

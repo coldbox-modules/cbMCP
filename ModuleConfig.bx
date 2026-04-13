@@ -47,6 +47,124 @@ class {
 		)
 		// Register tools
 		.scan( "cbMCP.models.tools" )
+		// -------------------------------------------------------------------------
+		// Resources — ambient read-only context surfaced to the AI client
+		// -------------------------------------------------------------------------
+		.registerResource(
+			uri         : "coldbox://app/settings",
+			name        : "ColdBox Application Settings",
+			description : "All active ColdBox application configuration settings",
+			mimeType    : "application/json",
+			handler     : () => {
+				var settings = application.cbController.getConfigSettings()
+				// Keep only serialisable scalar / array / struct values
+				var safe = {}
+				for ( var key in settings ) {
+					var val = settings[ key ]
+					if ( isSimpleValue( val ) || isArray( val ) || isStruct( val ) ) {
+						safe[ key ] = val
+					}
+				}
+				return ( safe )
+			}
+		)
+		.registerResource(
+			uri         : "coldbox://app/modules",
+			name        : "Loaded ColdBox Modules",
+			description : "All currently activated HMVC modules with their key metadata",
+			mimeType    : "application/json",
+			handler     : () => {
+				var modules = application.cbController.getSetting( "modules" )
+				var result  = modules
+					.keyArray()
+					.sort( "text", "asc" )
+					.map( name => {
+						var m = modules[ name ]
+						return {
+							"name"        : name,
+							"version"     : m.version      ?: "",
+							"description" : m.description  ?: "",
+							"entryPoint"  : m.entryPoint   ?: "",
+							"author"      : m.author       ?: "",
+							"activated"   : m.activated    ?: false
+						}
+					} )
+				return ( result )
+			}
+		)
+		.registerResource(
+			uri         : "coldbox://app/routes",
+			name        : "ColdBox Route Definitions",
+			description : "All registered URL routes with their patterns and handler targets",
+			mimeType    : "application/json",
+			handler     : () => {
+				var routes = application.cbController.getRoutingService().getRouter().getRoutes()
+				var result = routes.map( r => {
+					return {
+						"pattern"   : r.pattern   ?: "",
+						"handler"   : r.handler   ?: "",
+						"action"    : r.action    ?: "",
+						"name"      : r.name      ?: "",
+						"methods"   : r.methods   ?: [],
+						"module"    : r.module    ?: "",
+						"namespace" : r.namespace ?: ""
+					}
+				} )
+				return ( result )
+			}
+		)
+		.registerResource(
+			uri         : "coldbox://app/handlers",
+			name        : "Registered ColdBox Handlers",
+			description : "All registered event handlers (controllers) in the application",
+			mimeType    : "application/json",
+			handler     : () => {
+				var handlers = listToArray( application.cbController.getSetting( "registeredHandlers" ) )
+				handlers.sort( "text", "asc" )
+				return ( handlers )
+			}
+		)
+		// -------------------------------------------------------------------------
+		// Prompts — pre-packaged AI workflows surfaced in the client prompt library
+		// -------------------------------------------------------------------------
+		.registerPrompt(
+			name        : "coldbox_app_overview",
+			description : "Generates a comprehensive overview of this ColdBox application",
+			handler     : () => {
+				var ctrl    = application.cbController
+				var appName = ctrl.getSetting( "appName" )
+				var modules = ctrl.getSetting( "modules" ).keyArray().sort( "text", "asc" )
+				return "Provide a comprehensive overview of this ColdBox application. Here is what I know so far:
+App Name  : #appName#
+Modules   : #modules.toList()#
+
+Use the available MCP tools (get_coldbox_settings, get_application_structure, get_router_settings, get_interceptors, etc.) to gather additional details, then summarise the architecture, key modules, routing strategy, and any notable configuration."
+			}
+		)
+		.registerPrompt(
+			name        : "debug_handler",
+			description : "Diagnoses issues with a specific ColdBox event handler",
+			args        : [
+				{ name: "handlerName", description: "The handler to investigate (e.g. 'Main' or 'api:Users')", required: true }
+			],
+			handler     : ( handlerName = "" ) => {
+				return "Diagnose the ColdBox handler '#handlerName#'. Use the get_handler_metadata and get_registered_handlers MCP tools to gather details, then identify any potential issues with routing, dependency injection, or event execution lifecycle."
+			}
+		)
+		.registerPrompt(
+			name        : "cache_health_report",
+			description : "Produces a CacheBox health report for all cache providers",
+			handler     : () => {
+				return "Generate a CacheBox health report for this ColdBox application. Use the get_caches and get_cache_stats MCP tools to collect data on each cache provider, then summarise hit rates, eviction counts, object counts, and identify any providers showing signs of memory pressure or degraded performance."
+			}
+		)
+		.registerPrompt(
+			name        : "interceptor_audit",
+			description : "Audits all registered ColdBox interceptors and their interception points",
+			handler     : () => {
+				return "Audit the ColdBox interceptors for this application. Use the get_interceptors MCP tool to list all registered interceptors and their interception points. Identify interceptors listening on the same points that might conflict, flag any with unusual names or patterns, and suggest ordering improvements where applicable."
+			}
+		)
 	}
 
 	/**

@@ -48,7 +48,9 @@ class {
 			"engine"  : engine,
 			"version" : version,
 			"layout"  : layout,
-			"os"      : server.os.name & " " & server.os.version
+			"os"      : server.os.name & " " & server.os.version,
+			"java"    : server.system.properties[ "java.runtime.name" ] & " " & server.system.properties[ "java.runtime.version" ],
+			"modules" : application.cbController.getModuleService().getModuleRegistry().keyArray().sort()
 		}
 	}
 
@@ -96,6 +98,33 @@ class {
 			return "No ColdBox setting found with the key: #arguments.name#"
 		}
 		return controller.getSetting( arguments.name )
+	}
+
+	/**
+	 * Reinitialize the ColdBox application: fires preReinit interceptors, shuts down all
+	 * services, and removes the controller from application scope so the next request
+	 * rebuilds it from scratch. Equivalent to hitting `?fwreinit=1`.
+	 */
+	@AITool
+	@mcpTool
+	function reinit_app() {
+		var appKey = application.cbController.getAppKey()
+
+		lock
+			name    = "coldbox.reinit.#application.applicationName#"
+			type    = "exclusive"
+			timeout = "30" {
+
+			if ( structKeyExists( application, appKey ) ) {
+				var controller = application[ appKey ]
+				controller.getModuleService().loadMappings()
+				controller.getInterceptorService().announce( "preReinit" )
+				controller.getLoaderService().processShutdown( force : true )
+				structDelete( application, appKey )
+			}
+		}
+
+		return "ColdBox application '#appKey#' has been shut down. It will fully reinitialize on the next incoming request."
 	}
 
 	// -------------------------------------------------------------------------

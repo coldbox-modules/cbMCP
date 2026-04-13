@@ -129,6 +129,109 @@ class extends="coldbox.system.testing.BaseTestCase" {
 				expect( fromRoot.appenders ).toBe( fromLookup.appenders )
 			} )
 
+			// --- read_log_entries ---
+			it( "can read log entries from all file-based appenders", function() {
+				// Write something to the log so there is at least one entry
+				application.cbController.getLogBox().getRootLogger().info( "cbMCP test: read_log_entries probe" )
+				// Give the async queue a moment to flush
+				sleep( 300 )
+				var result = tool.read_log_entries()
+				expect( result ).toBeArray()
+				expect( result.len() ).toBeGT( 0 )
+			} )
+
+			it( "read_log_entries result items have expected keys", function() {
+				var result = tool.read_log_entries()
+				expect( result ).toBeArray()
+				var first = result[ 1 ]
+				expect( first ).toHaveKey( "appenderName" )
+				expect( first ).toHaveKey( "logFile" )
+				expect( first ).toHaveKey( "entries" )
+				expect( first.appenderName ).toBeString()
+				expect( first.logFile ).toBeString()
+				expect( first.entries ).toBeArray()
+			} )
+
+			it( "read_log_entries entries have expected log line keys", function() {
+				application.cbController.getLogBox().getRootLogger().warn( "cbMCP test: entry key probe" )
+				sleep( 300 )
+				var result = tool.read_log_entries()
+				var entries = result[ 1 ].entries
+				expect( entries.len() ).toBeGT( 0 )
+				var entry = entries[ entries.len() ]
+				expect( entry ).toHaveKey( "severity" )
+				expect( entry ).toHaveKey( "appender" )
+				expect( entry ).toHaveKey( "date" )
+				expect( entry ).toHaveKey( "time" )
+				expect( entry ).toHaveKey( "category" )
+				expect( entry ).toHaveKey( "message" )
+				expect( entry.severity ).toBeString()
+				expect( entry.severity ).notToBeEmpty()
+			} )
+
+			it( "read_log_entries respects the limit parameter", function() {
+				var result  = tool.read_log_entries( limit = 2 )
+				var entries = result[ 1 ].entries
+				expect( entries.len() ).toBeLTE( 2 )
+			} )
+
+			it( "read_log_entries returns error string for unknown appender name", function() {
+				var result = tool.read_log_entries( appenderName = "__nonExistentAppender__XYZ__" )
+				expect( result ).toBeString()
+				expect( result ).toInclude( "No file-based appender found" )
+			} )
+
+			it( "read_log_entries skips non-file appenders (myConsole)", function() {
+				// myConsole is a ConsoleAppender — should not appear in results
+				var result = tool.read_log_entries()
+				expect( result ).toBeArray()
+				var names = result.map( ( r ) => r.appenderName )
+				expect( names ).notToInclude( "myConsole" )
+			} )
+
+			// --- get_last_error ---
+			it( "can get the last error from file-based appenders", function() {
+				application.cbController.getLogBox().getRootLogger().error( "cbMCP test: last error probe" )
+				sleep( 300 )
+				var result = tool.get_last_error()
+				expect( result ).toBeArray()
+				expect( result.len() ).toBeGT( 0 )
+			} )
+
+			it( "get_last_error result items have expected keys", function() {
+				var result = tool.get_last_error()
+				var first  = result[ 1 ]
+				expect( first ).toHaveKey( "appenderName" )
+				expect( first ).toHaveKey( "logFile" )
+				expect( first ).toHaveKey( "entry" )
+				expect( first ).toHaveKey( "note" )
+			} )
+
+			it( "get_last_error returns an ERROR or FATAL entry after logging one", function() {
+				application.cbController.getLogBox().getRootLogger().error( "cbMCP test: verifiable error entry" )
+				sleep( 300 )
+				var result = tool.get_last_error()
+				var entry  = result[ 1 ].entry
+				expect( entry ).toBeStruct()
+				expect( entry ).toHaveKey( "severity" )
+				expect( entry.severity ).toBeIn( [ "ERROR", "FATAL" ] )
+			} )
+
+			it( "get_last_error entry message matches logged message", function() {
+				var marker = "cbMCP test marker #createUUID()#"
+				application.cbController.getLogBox().getRootLogger().error( marker )
+				sleep( 300 )
+				var result = tool.get_last_error()
+				var entry  = result[ 1 ].entry
+				expect( entry.message ).toInclude( marker )
+			} )
+
+			it( "get_last_error returns error string for unknown appender name", function() {
+				var result = tool.get_last_error( appenderName = "__nonExistentAppender__XYZ__" )
+				expect( result ).toBeString()
+				expect( result ).toInclude( "No file-based appender found" )
+			} )
+
 		} )
 	}
 

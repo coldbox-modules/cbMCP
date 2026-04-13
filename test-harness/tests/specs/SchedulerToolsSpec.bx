@@ -104,6 +104,68 @@ class extends="coldbox.system.testing.BaseTestCase" {
 				}
 			} )
 
+			// --- pause_task ---
+			it( "returns an error string when pausing with a non-existent scheduler", function() {
+				var result = tool.pause_task( "__nonExistentScheduler__", "anyTask" )
+				expect( result ).toBeString()
+				expect( result ).toInclude( "No scheduler found" )
+			} )
+
+			it( "returns an error string when pausing a non-existent task", function() {
+				var schedulers = tool.get_schedulers()
+				if ( schedulers.len() > 0 ) {
+					var result = tool.pause_task( schedulers[ 1 ].name, "__nonExistentTask__" )
+					expect( result ).toBeString()
+					expect( result ).toInclude( "No task found" )
+				}
+			} )
+
+			it( "can pause an existing task", function() {
+				var schedulers = tool.get_schedulers()
+				var found      = false
+				schedulers.each( ( s ) => {
+					if ( !found && s.tasks.len() > 0 ) {
+						var result = tool.pause_task( s.name, s.tasks[ 1 ] )
+						expect( result ).toBeString()
+						expect( result ).toInclude( "paused" )
+						// cleanup: resume so we don't leave the task disabled
+						tool.resume_task( s.name, s.tasks[ 1 ] )
+						found = true
+					}
+				} )
+			} )
+
+			// --- resume_task ---
+			it( "returns an error string when resuming with a non-existent scheduler", function() {
+				var result = tool.resume_task( "__nonExistentScheduler__", "anyTask" )
+				expect( result ).toBeString()
+				expect( result ).toInclude( "No scheduler found" )
+			} )
+
+			it( "returns an error string when resuming a non-existent task", function() {
+				var schedulers = tool.get_schedulers()
+				if ( schedulers.len() > 0 ) {
+					var result = tool.resume_task( schedulers[ 1 ].name, "__nonExistentTask__" )
+					expect( result ).toBeString()
+					expect( result ).toInclude( "No task found" )
+				}
+			} )
+
+			it( "can pause and then resume an existing task", function() {
+				var schedulers = tool.get_schedulers()
+				var found      = false
+				schedulers.each( ( s ) => {
+					if ( !found && s.tasks.len() > 0 ) {
+						var taskName  = s.tasks[ 1 ]
+						tool.pause_task( s.name, taskName )
+						var result = tool.resume_task( s.name, taskName )
+						expect( result ).toBeString()
+						expect( result ).toInclude( "resumed" )
+						found = true
+					}
+				} )
+			} )
+
 		} )
 	}
 

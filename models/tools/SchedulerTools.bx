@@ -3,30 +3,29 @@
  */
 class {
 
+	/*********************************** PUBLIC TOOLS ***********************************/
+
 	/**
 	 * Get all registered task schedulers with their configurations and scheduled tasks.
 	 */
 	@AITool
 	@mcpTool
 	function get_schedulers() {
-		var schedulers = application.cbController.getSchedulerService().getSchedulers()
-		var result     = []
-
-		schedulers.each( ( schedulerName, scheduler ) => {
+		var result = []
+		getSchedulerMap().each( ( schedulerName, scheduler ) => {
 			result.append( {
-				"name"      : schedulerName,
-				"executor"  : scheduler.getExecutor()?.getName() ?: "default",
-				"tasks" : scheduler.getRegisteredTasks(),
-				"stats" : scheduler.getTaskStats(),
-				"started"   : scheduler.hasStarted(),
+				"name"            : schedulerName,
+				"executor"        : scheduler.getExecutor()?.getName() ?: "default",
+				"tasks"           : scheduler.getRegisteredTasks(),
+				"stats"           : scheduler.getTaskStats(),
+				"started"         : scheduler.hasStarted(),
 				"shutdownTimeout" : scheduler.getShutdownTimeout(),
-				"startedAt" : scheduler.getStartedAt(),
-				"serverFixation" : scheduler.getServerFixation(),
-				"timezone"  : scheduler.getTimezone()?.getID() ?: "",
-				"taskCount" : scheduler.getRegisteredTasks().len(),
+				"startedAt"       : scheduler.getStartedAt(),
+				"serverFixation"  : scheduler.getServerFixation(),
+				"timezone"        : scheduler.getTimezone()?.getID() ?: "",
+				"taskCount"       : scheduler.getRegisteredTasks().len()
 			} )
 		} )
-
 		return result
 	}
 
@@ -38,7 +37,7 @@ class {
 	@AITool
 	@mcpTool
 	function get_scheduler( required string schedulerName ) {
-		var schedulers = application.cbController.getSchedulerService().getSchedulers()
+		var schedulers = getSchedulerMap()
 		if ( !schedulers.keyExists( arguments.schedulerName ) ) {
 			return "No scheduler found with the name: #arguments.schedulerName#"
 		}
@@ -50,7 +49,7 @@ class {
 			"startedAt"       : scheduler.getStartedAt(),
 			"shutdownTimeout" : scheduler.getShutdownTimeout(),
 			"timezone"        : scheduler.getTimezone()?.getID() ?: "",
-			"tasks" : scheduler.getRegisteredTasks(),
+			"tasks"           : scheduler.getRegisteredTasks(),
 			"taskCount"       : scheduler.getRegisteredTasks().len(),
 			"taskStats"       : scheduler.getTaskStats()
 		}
@@ -65,15 +64,9 @@ class {
 	@AITool
 	@mcpTool
 	function get_task_stats( required string schedulerName, required string taskName ) {
-		var schedulers = application.cbController.getSchedulerService().getSchedulers()
-		if ( !schedulers.keyExists( arguments.schedulerName ) ) {
-			return "No scheduler found with the name: #arguments.schedulerName#"
-		}
-		var scheduler = schedulers[ arguments.schedulerName ]
-		if ( !scheduler.hasTask( arguments.taskName ) ) {
-			return "No task found with the name '#arguments.taskName#' in scheduler '#arguments.schedulerName#'"
-		}
-		return scheduler.getTaskRecord( arguments.taskName ).task.getStats()
+		var lookup = resolveTask( arguments.schedulerName, arguments.taskName )
+		if ( isSimpleValue( lookup ) ) return lookup
+		return lookup.getStats()
 	}
 
 	/**
@@ -85,7 +78,62 @@ class {
 	@AITool
 	@mcpTool
 	function run_task( required string schedulerName, required string taskName ) {
-		var schedulers = application.cbController.getSchedulerService().getSchedulers()
+		var lookup = resolveTask( arguments.schedulerName, arguments.taskName )
+		if ( isSimpleValue( lookup ) ) return lookup
+		lookup.run( force = true )
+		return "Task '#arguments.taskName#' in scheduler '#arguments.schedulerName#' has been executed."
+	}
+
+	/**
+	 * Pause a specific scheduled task so it skips execution on its next scheduled trigger.
+	 * The task remains registered in the scheduler but will not run until resumed.
+	 *
+	 * @schedulerName The name of the scheduler that owns the task
+	 * @taskName      The name of the task to pause
+	 */
+	@AITool
+	@mcpTool
+	function pause_task( required string schedulerName, required string taskName ) {
+		var lookup = resolveTask( arguments.schedulerName, arguments.taskName )
+		if ( isSimpleValue( lookup ) ) return lookup
+		lookup.disable()
+		return "Task '#arguments.taskName#' in scheduler '#arguments.schedulerName#' has been paused."
+	}
+
+	/**
+	 * Resume a previously paused scheduled task so it executes again on its next scheduled trigger.
+	 *
+	 * @schedulerName The name of the scheduler that owns the task
+	 * @taskName      The name of the task to resume
+	 */
+	@AITool
+	@mcpTool
+	function resume_task( required string schedulerName, required string taskName ) {
+		var lookup = resolveTask( arguments.schedulerName, arguments.taskName )
+		if ( isSimpleValue( lookup ) ) return lookup
+		lookup.enable()
+		return "Task '#arguments.taskName#' in scheduler '#arguments.schedulerName#' has been resumed."
+	}
+
+	/*********************************** PRIVATE HELPERS ***********************************/
+
+	/**
+	 * Returns the live scheduler map from the SchedulerService.
+	 */
+	private struct function getSchedulerMap() {
+		return application.cbController.getSchedulerService().getSchedulers()
+	}
+
+	/**
+	 * Resolves a task by scheduler and task name.
+	 * Returns the ScheduledTask object on success, or an error string if the
+	 * scheduler or task does not exist.
+	 *
+	 * @schedulerName The name of the scheduler that owns the task
+	 * @taskName      The name of the task to resolve
+	 */
+	private function resolveTask( required string schedulerName, required string taskName ) {
+		var schedulers = getSchedulerMap()
 		if ( !schedulers.keyExists( arguments.schedulerName ) ) {
 			return "No scheduler found with the name: #arguments.schedulerName#"
 		}
@@ -93,8 +141,7 @@ class {
 		if ( !scheduler.hasTask( arguments.taskName ) ) {
 			return "No task found with the name '#arguments.taskName#' in scheduler '#arguments.schedulerName#'"
 		}
-		scheduler.getTaskRecord( arguments.taskName ).task.run( force = true )
-		return "Task '#arguments.taskName#' in scheduler '#arguments.schedulerName#' has been executed."
+		return scheduler.getTaskRecord( arguments.taskName ).task
 	}
 
 }

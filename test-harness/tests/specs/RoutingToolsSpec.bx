@@ -1,0 +1,65 @@
+class extends="coldbox.system.testing.BaseTestCase" {
+
+	/*********************************** LIFE CYCLE Methods ***********************************/
+
+	function beforeAll() {
+		super.beforeAll()
+		setup()
+	}
+
+	function afterAll() {
+		super.afterAll()
+	}
+
+	/*********************************** BDD SUITES ***********************************/
+
+	function run() {
+		describe( "RoutingTools", function() {
+
+			beforeEach( function( currentSpec ) {
+				variables.tool = getInstance( "RoutingTools@cbMCP" )
+			} )
+
+			it( "can list application routes as JSON", function() {
+				var result = tool.list_routes()
+				expect( result ).toBeArray()
+			} )
+
+			it( "returns at least one application route", function() {
+				var result = tool.list_routes()
+				expect( result.len() ).toBeGT( 0 )
+			} )
+
+			it( "can list the module routing table as JSON", function() {
+				var result = tool.list_module_routes()
+				expect( result ).toBeStruct()
+			} )
+
+			it( "can get routes for the cbMCP module", function() {
+				var result = tool.get_module_routes( "cbMCP" )
+				expect( result ).toBeArray()
+				expect( result.len() ).toBeGT( 0 )
+			} )
+
+			// --- get_router_settings ---
+			it( "can get router configuration settings", function() {
+				var result = tool.get_router_settings()
+				expect( result ).toBeStruct()
+				expect( result ).toHaveKey( "baseURL" )
+				expect( result ).toHaveKey( "uniqueURLs" )
+				expect( result ).toHaveKey( "looseMatching" )
+				expect( result ).toHaveKey( "multiDomainRouting" )
+				expect( result ).toHaveKey( "totalRoutes" )
+				expect( result ).toHaveKey( "totalModuleRoutingTables" )
+			} )
+
+			it( "total routes count matches list_routes result", function() {
+				var settings = tool.get_router_settings()
+				var routes   = tool.list_routes()
+				expect( settings.totalRoutes ).toBe( routes.len() )
+			} )
+
+		} )
+	}
+
+}

@@ -75,12 +75,13 @@ class{
 	public boolean function onRequestStart(String targetPage){
 
 		if( url.keyExists( "fwreinit" ) ){
-			if( server.keyExists( "lucee" ) ){
-				pagePoolClear();
-			}
+			PagePoolClear()
 			// ORM reload: ENABLE IF NEEDED
 			// ormReload();
 		}
+
+		structDelete( application, "cbController" )
+		application.cbBootstrap.onApplicationStart();
 
 		// Process ColdBox Request
 		application.cbBootstrap.onRequestStart( arguments.targetPage );

@@ -10,29 +10,250 @@ class {
 	@mcpTool
 	function get_caches() {
 		var cacheBox   = application.cbController.getCacheBox()
-		var cacheNames = cacheBox.getCacheNames()
-		var result     = []
-
-		cacheNames.each( ( cacheName ) => {
+		var results = cacheBox.getCacheNames()
+			.reduce( ( result, cacheName ) => {
 			var cache = cacheBox.getCache( cacheName )
 			var stats = cache.getStats()
-
-			result.append( {
+			result[ cacheName ] = {
 				"name"          : cacheName,
 				"provider"      : getMetadata( cache ).name ?: "",
+				"isEnabled"     : cache.isEnabled(),
+				"isReportingEnabled" : cache.isReportingEnabled(),
+				"isColdBoxCache" : cache instanceOf "IColdBoxProvider",
 				"stats"         : {
 					"hits"        : stats.getHits(),
 					"misses"      : stats.getMisses(),
 					"evictions"   : stats.getEvictionCount(),
 					"objectCount" : stats.getObjectCount(),
 					"freeMemory"  : stats.getGarbageCollections(),
-					"performance" : stats.getCachePerformanceRatio()
+					"performance" : stats.getCachePerformanceRatio(),
+					"lastReapDateTime" : stats.getLastReapDateTime()
 				},
 				"configuration" : cache.getConfiguration()
-			} )
-		} )
+			}
+			return result;
+		}, {} )
 
-		return jsonSerialize( result )
+		return results;
+	}
+
+	/**
+	 * Get all the names of the registered CacheBox cache providers.
+	 */
+	@AITool
+	@mcpTool
+	function get_cache_names() {
+		return application.cbController.getCacheBox().getCacheNames().sort()
+	}
+
+	/**
+	 * Get the statistics for a specific cache provider by name.
+	 *
+	 * @cacheName The name of the cache provider to inspect
+	 */
+	@AITool
+	@mcpTool
+	function get_cache_stats( required string cacheName ) {
+		var cache = application.cbController.getCacheBox().getCache( arguments.cacheName )
+		var stats = cache.getStats()
+		return {
+			"hits"             : stats.getHits(),
+			"misses"           : stats.getMisses(),
+			"evictions"        : stats.getEvictionCount(),
+			"objectCount"      : stats.getObjectCount(),
+			"garbageCollections" : stats.getGarbageCollections(),
+			"performance"      : stats.getCachePerformanceRatio(),
+			"lastReapDateTime" : stats.getLastReapDateTime()
+		}
+	}
+
+	/**
+	 * Get all the keys stored in a specific cache provider.
+	 *
+	 * @cacheName The name of the cache provider to inspect
+	 */
+	@AITool
+	@mcpTool
+	function get_cache_keys( required string cacheName ) {
+		return application.cbController.getCacheBox().getCache( arguments.cacheName ).getKeys()
+	}
+
+	/**
+	 * Get the size (number of elements) of a specific cache provider.
+	 *
+	 * @cacheName The name of the cache provider to inspect
+	 */
+	@AITool
+	@mcpTool
+	function get_cache_size( required string cacheName ) {
+		return application.cbController.getCacheBox().getCache( arguments.cacheName ).getSize()
+	}
+
+	/**
+	 * Get the metadata for a specific cached object by cache name and object key.
+	 *
+	 * @cacheName The name of the cache provider
+	 * @objectKey The key of the cached object
+	 */
+	@AITool
+	@mcpTool
+	function get_cache_key_metadata( required string cacheName, required string objectKey ) {
+		return application.cbController.getCacheBox().getCache( arguments.cacheName ).getCachedObjectMetadata( arguments.objectKey )
+	}
+
+	/**
+	 * Check if a specific key exists (is a hit) in a cache provider.
+	 *
+	 * @cacheName The name of the cache provider
+	 * @objectKey The key to look up
+	 */
+	@AITool
+	@mcpTool
+	function cache_key_exists( required string cacheName, required string objectKey ) {
+		return application.cbController.getCacheBox().getCache( arguments.cacheName ).lookup( arguments.objectKey )
+	}
+
+	/**
+	 * Get the full store metadata report for a specific cache provider.
+	 * Returns a struct of all cached keys mapped to their metadata structures.
+	 *
+	 * @cacheName The name of the cache provider
+	 */
+	@AITool
+	@mcpTool
+	function get_store_metadata_report( required string cacheName ) {
+		return application.cbController.getCacheBox().getCache( arguments.cacheName ).getStoreMetadataReport()
+	}
+
+	/**
+	 * Clear ALL elements from a specific cache provider.
+	 *
+	 * @cacheName The name of the cache provider to clear
+	 */
+	@AITool
+	@mcpTool
+	function clear_all( required string cacheName ) {
+		application.cbController.getCacheBox().getCache( arguments.cacheName ).clearAll()
+		return "Cache '#arguments.cacheName#' has been cleared."
+	}
+
+	/**
+	 * Remove a specific item from a cache provider by its key.
+	 *
+	 * @cacheName The name of the cache provider
+	 * @objectKey The key of the item to remove
+	 */
+	@AITool
+	@mcpTool
+	function clear_item( required string cacheName, required string objectKey ) {
+		var removed = application.cbController.getCacheBox().getCache( arguments.cacheName ).clear( arguments.objectKey )
+		return removed
+	}
+
+	/**
+	 * Clear all cached events from a ColdBox application cache (IColdBoxProvider only).
+	 * Optionally run the clear asynchronously.
+	 *
+	 * @cacheName The name of the ColdBox application cache provider
+	 * @async     Whether to clear asynchronously (default: false)
+	 */
+	@AITool
+	@mcpTool
+	function clear_all_events( required string cacheName, boolean async = false ) {
+		var cache = application.cbController.getCacheBox().getCache( arguments.cacheName )
+		if ( !( cache instanceOf "coldbox.system.cache.providers.IColdBoxProvider" ) ) {
+			return "Cache '#arguments.cacheName#' is not a ColdBox application cache and does not support event clearing."
+		}
+		cache.clearAllEvents( arguments.async )
+		return "All events cleared from cache '#arguments.cacheName#'."
+	}
+
+	/**
+	 * Clear a specific cached event (and optional query string permutation) from a ColdBox application cache.
+	 *
+	 * @cacheName     The name of the ColdBox application cache provider
+	 * @eventSnippet  The full or partial event name to clear (e.g. "main.index")
+	 * @queryString   Optional query string to target a specific permutation
+	 */
+	@AITool
+	@mcpTool
+	function clear_event( required string cacheName, required string eventSnippet, string queryString = "" ) {
+		var cache = application.cbController.getCacheBox().getCache( arguments.cacheName )
+		if ( !( cache instanceOf "coldbox.system.cache.providers.IColdBoxProvider" ) ) {
+			return "Cache '#arguments.cacheName#' is not a ColdBox application cache and does not support event clearing."
+		}
+		cache.clearEvent( arguments.eventSnippet, arguments.queryString )
+		return "Event '#arguments.eventSnippet#' cleared from cache '#arguments.cacheName#'."
+	}
+
+	/**
+	 * Clear multiple cached event permutations at once from a ColdBox application cache.
+	 *
+	 * @cacheName      The name of the ColdBox application cache provider
+	 * @eventSnippets  Comma-delimited list of event snippets to clear
+	 * @queryString    Optional comma-delimited list of query strings (must match eventSnippets length if provided)
+	 */
+	@AITool
+	@mcpTool
+	function clear_event_multi( required string cacheName, required string eventSnippets, string queryString = "" ) {
+		var cache = application.cbController.getCacheBox().getCache( arguments.cacheName )
+		if ( !( cache instanceOf "coldbox.system.cache.providers.IColdBoxProvider" ) ) {
+			return "Cache '#arguments.cacheName#' is not a ColdBox application cache and does not support event clearing."
+		}
+		cache.clearEventMulti( arguments.eventSnippets, arguments.queryString )
+		return "Events '#arguments.eventSnippets#' cleared from cache '#arguments.cacheName#'."
+	}
+
+	/**
+	 * Clear all cached views from a ColdBox application cache (IColdBoxProvider only).
+	 * Optionally run the clear asynchronously.
+	 *
+	 * @cacheName The name of the ColdBox application cache provider
+	 * @async     Whether to clear asynchronously (default: false)
+	 */
+	@AITool
+	@mcpTool
+	function clear_all_views( required string cacheName, boolean async = false ) {
+		var cache = application.cbController.getCacheBox().getCache( arguments.cacheName )
+		if ( !( cache instanceOf "coldbox.system.cache.providers.IColdBoxProvider" ) ) {
+			return "Cache '#arguments.cacheName#' is not a ColdBox application cache and does not support view clearing."
+		}
+		cache.clearAllViews( arguments.async )
+		return "All views cleared from cache '#arguments.cacheName#'."
+	}
+
+	/**
+	 * Clear a specific cached view (by snippet) from a ColdBox application cache.
+	 *
+	 * @cacheName    The name of the ColdBox application cache provider
+	 * @viewSnippet  The full or partial view name to clear (e.g. "main/index")
+	 */
+	@AITool
+	@mcpTool
+	function clear_view( required string cacheName, required string viewSnippet ) {
+		var cache = application.cbController.getCacheBox().getCache( arguments.cacheName )
+		if ( !( cache instanceOf "coldbox.system.cache.providers.IColdBoxProvider" ) ) {
+			return "Cache '#arguments.cacheName#' is not a ColdBox application cache and does not support view clearing."
+		}
+		cache.clearView( arguments.viewSnippet )
+		return "View '#arguments.viewSnippet#' cleared from cache '#arguments.cacheName#'."
+	}
+
+	/**
+	 * Clear multiple cached view permutations at once from a ColdBox application cache.
+	 *
+	 * @cacheName     The name of the ColdBox application cache provider
+	 * @viewSnippets  Comma-delimited list or array of view snippets to clear
+	 */
+	@AITool
+	@mcpTool
+	function clear_view_multi( required string cacheName, required string viewSnippets ) {
+		var cache = application.cbController.getCacheBox().getCache( arguments.cacheName )
+		if ( !( cache instanceOf "coldbox.system.cache.providers.IColdBoxProvider" ) ) {
+			return "Cache '#arguments.cacheName#' is not a ColdBox application cache and does not support view clearing."
+		}
+		cache.clearViewMulti( arguments.viewSnippets )
+		return "Views '#arguments.viewSnippets#' cleared from cache '#arguments.cacheName#'."
 	}
 
 }

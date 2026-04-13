@@ -9,7 +9,7 @@ class {
 	@AITool
 	@mcpTool
 	function list_routes() {
-		return jsonSerialize( application.cbController.getRoutingService().getRouter().getRoutes() )
+		return application.cbController.getRoutingService().getRouter().getRoutes()
 	}
 
 	/**
@@ -18,7 +18,7 @@ class {
 	@AITool
 	@mcpTool
 	function list_module_routes() {
-		return jsonSerialize( application.cbController.getRoutingService().getRouter().getModuleRoutingTable() )
+		return application.cbController.getRoutingService().getRouter().getModuleRoutingTable()
 	}
 
 	/**
@@ -29,7 +29,23 @@ class {
 	@AITool
 	@mcpTool
 	function get_module_routes( required string moduleName ) {
-		return jsonSerialize( application.cbController.getRoutingService().getModuleRoutes( moduleName ) )
+		return application.cbController.getRoutingService().getModuleRoutes( moduleName )
+	}
+
+	/**
+	 * Get the router configuration and metadata (base URL, full rewrites, multi-domain routing, etc.)
+	 */
+	@AITool
+	@mcpTool
+	function get_router_settings() {
+		var router = application.cbController.getRoutingService().getRouter()
+		return {
+			"baseURL"                  : router.getBaseURL(),
+			"looseMatching"            : router.getLooseMatching(),
+			"multiDomainRouting"       : router.getMultiDomainDiscovery(),
+			"totalRoutes"              : router.getRoutes().len(),
+			"totalModuleRoutingTables" : router.getModuleRoutingTable().len()
+		}
 	}
 
 }

@@ -43,7 +43,38 @@ class {
 			}
 		} )
 
-		return jsonSerialize( result )
+		return result
+	}
+
+	/**
+	 * Get metadata and public actions for a specific handler by name.
+	 *
+	 * @handlerName The handler name as registered (e.g. "Main", "api/Users")
+	 */
+	@AITool
+	@mcpTool
+	function get_handler( required string handlerName ) {
+		var controller             = application.cbController
+		var handlersInvocationPath = controller.getSetting( "handlersInvocationPath" )
+		try {
+			var metadata = getClassMetadata( handlersInvocationPath & "." & arguments.handlerName )
+			var actions  = []
+			if ( metadata.keyExists( "functions" ) ) {
+				metadata.functions.each( ( func ) => {
+					if ( func.access == "public" ) {
+						actions.append( { "name" : func.name } )
+					}
+				} )
+			}
+			return {
+				"handler"        : arguments.handlerName,
+				"invocationPath" : handlersInvocationPath & "." & arguments.handlerName,
+				"actions"        : actions,
+				"extends"        : metadata.extends?.name ?: ""
+			}
+		} catch ( any e ) {
+			return { "handler" : arguments.handlerName, "error" : "Could not load metadata: " & e.message }
+		}
 	}
 
 }

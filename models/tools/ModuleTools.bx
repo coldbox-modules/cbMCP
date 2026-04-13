@@ -11,24 +11,52 @@ class {
 	function get_modules() {
 		var moduleService  = application.cbController.getModuleService()
 		var moduleRegistry = moduleService.getModuleRegistry()
-		var moduleConfigs  = moduleService.getModuleConfigCache()
+		var moduleConfigs  = application.cbController.getSetting( "modules" )
 		var result         = []
 
 		moduleRegistry.each( ( moduleName, moduleInfo ) => {
+			var moduleConfig = moduleConfigs[ moduleName ]
 			result.append( {
+				"activated"       : moduleInfo.activated ?: false,
+				"activationTime" : moduleInfo.activationTime ?: "",
+				"aliases"        : moduleInfo.aliases ?: [],
+				"author"		  : moduleConfig?.author ?: "",
+				"autoMapModels"  : moduleConfig?.autoMapModels ?: false,
+				"autoProcessModels" : moduleConfig?.autoProcessModels ?: false,
+				"bundle"          : moduleInfo.bundle ?: "",
+				"conventions"     : moduleConfig?.conventions ?: {},
+				"dependencies"    : moduleConfig?.dependencies ?: [],
+				"description" 	 : moduleConfig?.description ?: "",
+				"disabled"        : moduleInfo.disabled ?: false,
+				"engineMapping"      : moduleConfig?.engineMapping ?: moduleConfig?.cfMapping ?: "",
+				"entrypoint"       : moduleConfig?.entryPoint ?: "",
+				"executors"        : moduleConfig?.executors ?: [],
+				"handlerInvocationPath" : moduleConfig?.handlerInvocationPath ?: "",
+				"handlerPhysicalPath" : moduleConfig?.handlerPhysicalPath ?: "",
+				"inheritedEntryPoints" : moduleInfo.inheritedEntryPoints ?: [],
+				"inheritEntryPoint" : moduleConfig?.inheritEntryPoint ?: false,
+				"injectorName"   : moduleConfig?.injectorName ?: "",
+				"invocationPath"  : moduleInfo.invocationPath ?: "",
+				"layoutParentLookup" : moduleConfig?.layoutParentLookup ?: "",
+				"loadTime"          : moduleInfo.loadTime ?: "",
+				"mapping"           : moduleConfig?.mapping ?: "",
+				"modelNamespace"     : moduleConfig?.modelNamespace ?: "",
+				"modelsInvocationPath" : moduleConfig?.modelsInvocationPath ?: "",
+				"modelsPhysicalPath" : moduleConfig?.modelsPhysicalPath ?: "",
 				"name"            : moduleName,
 				"path"            : moduleInfo.path ?: "",
-				"invocationPath"  : moduleInfo.invocationPath ?: "",
-				"activated"       : moduleInfo.activated ?: false,
 				"registered"      : moduleService.isModuleRegistered( moduleName ),
-				"settings"        : moduleConfigs[ moduleName ]?.settings ?: {},
-				"conventions"     : moduleConfigs[ moduleName ]?.conventions ?: {},
-				"parentSettings"  : moduleConfigs[ moduleName ]?.parentSettings ?: {},
-				"hasModuleConfig" : moduleConfigs.keyExists( moduleName )
+				"registeredHandlers" : moduleConfig.registeredHandlers ?: [],
+				"resources"	   : moduleConfig?.resources ?: [],
+				"routes" 	   : moduleConfig?.routes ?: [],
+				"viewParentLookup" : moduleConfig?.viewParentLookup ?: "",
+				"registrationTime" : moduleInfo.registrationTime ?: "",
+				"title" 		 : moduleConfig?.title ?: "",
+				"version" 		 : moduleConfig?.version ?: "",
 			} )
 		} )
 
-		return jsonSerialize( result )
+		return result
 	}
 
 	/**
@@ -37,7 +65,46 @@ class {
 	@AITool
 	@mcpTool
 	function get_loaded_modules() {
-		return jsonSerialize( application.cbController.getModuleService().getLoadedModules() )
+		return application.cbController.getModuleService().getLoadedModules()
+	}
+
+	/**
+	 * Get the full configuration and status for a specific registered module.
+	 *
+	 * @moduleName The name of the module to inspect
+	 */
+	@AITool
+	@mcpTool
+	function get_module( required string moduleName ) {
+		var moduleService = application.cbController.getModuleService()
+		if ( !moduleService.isModuleRegistered( arguments.moduleName ) ) {
+			return "No module found with the name: #arguments.moduleName#"
+		}
+		var moduleRegistry = moduleService.getModuleRegistry()
+		var moduleConfigs  = application.cbController.getSetting( "modules" )
+		var moduleInfo     = moduleRegistry[ arguments.moduleName ]
+		var moduleConfig   = moduleConfigs[ arguments.moduleName ]
+		return {
+			"name"              : arguments.moduleName,
+			"title"             : moduleConfig?.title ?: "",
+			"description"       : moduleConfig?.description ?: "",
+			"author"            : moduleConfig?.author ?: "",
+			"version"           : moduleConfig?.version ?: "",
+			"activated"         : moduleInfo.activated ?: false,
+			"registered"        : true,
+			"disabled"          : moduleInfo.disabled ?: false,
+			"invocationPath"    : moduleInfo.invocationPath ?: "",
+			"path"              : moduleInfo.path ?: "",
+			"entryPoint"        : moduleConfig?.entryPoint ?: "",
+			"mapping"           : moduleConfig?.mapping ?: "",
+			"modelNamespace"    : moduleConfig?.modelNamespace ?: "",
+			"dependencies"      : moduleConfig?.dependencies ?: [],
+			"settings"          : moduleConfig?.settings ?: {},
+			"routes"            : moduleConfig?.routes ?: [],
+			"loadTime"          : moduleInfo.loadTime ?: "",
+			"activationTime"    : moduleInfo.activationTime ?: "",
+			"registrationTime" : moduleInfo.registrationTime ?: ""
+		}
 	}
 
 }

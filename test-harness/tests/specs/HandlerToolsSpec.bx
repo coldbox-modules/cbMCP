@@ -1,0 +1,60 @@
+class extends="coldbox.system.testing.BaseTestCase" {
+
+	/*********************************** LIFE CYCLE Methods ***********************************/
+
+	function beforeAll() {
+		super.beforeAll()
+		setup()
+	}
+
+	function afterAll() {
+		super.afterAll()
+	}
+
+	/*********************************** BDD SUITES ***********************************/
+
+	function run() {
+		describe( "HandlerTools", function() {
+
+			beforeEach( function( currentSpec ) {
+				variables.tool = getInstance( "HandlerTools@cbMCP" )
+			} )
+
+			it( "can get all application handlers as JSON", function() {
+				var result = tool.get_handlers()
+				expect( result ).toBeArray()
+			} )
+
+			it( "returns handler entries with expected keys", function() {
+				var result = tool.get_handlers()
+				expect( result ).toBeArray()
+				// At least one handler exists in the test harness
+				expect( result.len() ).toBeGT( 0 )
+				var first = result[ 1 ]
+				expect( first ).toHaveKey( "handler" )
+				expect( first ).toHaveKey( "invocationPath" )
+				expect( first ).toHaveKey( "actions" )
+			} )
+
+			// --- get_handler ---
+			it( "can get metadata for a specific handler by name", function() {
+				var handlers = tool.get_handlers()
+				expect( handlers.len() ).toBeGT( 0 )
+				var result = tool.get_handler( handlers[ 1 ].handler )
+				expect( result ).toBeStruct()
+				expect( result ).toHaveKey( "handler" )
+				expect( result ).toHaveKey( "invocationPath" )
+				expect( result ).toHaveKey( "actions" )
+				expect( result ).toHaveKey( "extends" )
+			} )
+
+			it( "returns an error struct for a non-existent handler", function() {
+				var result = tool.get_handler( "__NonExistentHandler__" )
+				expect( result ).toBeStruct()
+				expect( result ).toHaveKey( "error" )
+			} )
+
+		} )
+	}
+
+}

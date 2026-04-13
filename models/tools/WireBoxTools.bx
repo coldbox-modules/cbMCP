@@ -27,7 +27,44 @@ class {
 			} )
 		} )
 
-		return jsonSerialize( result )
+		return result
+	}
+
+	/**
+	 * Check if a specific WireBox mapping exists in the DI container.
+	 *
+	 * @name The mapping name to check
+	 */
+	@AITool
+	@mcpTool
+	function has_mapping( required string name ) {
+		return application.cbController.getWireBox().getBinder().mappingExists( arguments.name )
+	}
+
+	/**
+	 * Get details for a specific WireBox mapping by name.
+	 *
+	 * @name The mapping name to retrieve
+	 */
+	@AITool
+	@mcpTool
+	function get_mapping( required string name ) {
+		var binder = application.cbController.getWireBox().getBinder()
+		if ( !binder.mappingExists( arguments.name ) ) {
+			return "No WireBox mapping found with the name: #arguments.name#"
+		}
+		var mapping = binder.getMapping( arguments.name )
+		return {
+			"name"               : arguments.name,
+			"path"               : mapping.getPath(),
+			"type"               : mapping.getType(),
+			"scope"              : mapping.getScope(),
+			"autowire"           : mapping.isAutowire(),
+			"alias"              : mapping.getAlias(),
+			"delegates"          : mapping.getDelegates(),
+			"threadSafe"         : mapping.getThreadSafe(),
+			"virtualInheritance" : mapping.getVirtualInheritance()
+		}
 	}
 
 }

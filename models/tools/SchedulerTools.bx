@@ -13,36 +13,88 @@ class {
 		var result     = []
 
 		schedulers.each( ( schedulerName, scheduler ) => {
-			var tasks = []
-
-			try {
-				var scheduledTasks = scheduler.getTasks()
-				scheduledTasks.each( ( taskName, task ) => {
-					tasks.append( {
-						"name"        : taskName,
-						"disabled"    : task.getDisabled(),
-						"hasStarted"  : task.hasStarted(),
-						"scheduledAt" : task.getScheduledAt(),
-						"nextRun"     : task.getNextRun(),
-						"lastRun"     : task.getLastRun(),
-						"lastResult"  : task.getLastResult(),
-						"stats"       : task.getStats()
-					} )
-				} )
-			} catch ( any e ) {
-				// Scheduler may not implement getTasks()
-			}
-
 			result.append( {
 				"name"      : schedulerName,
 				"executor"  : scheduler.getExecutor()?.getName() ?: "default",
+				"tasks" : scheduler.getRegisteredTasks(),
+				"stats" : scheduler.getTaskStats(),
+				"started"   : scheduler.hasStarted(),
+				"shutdownTimeout" : scheduler.getShutdownTimeout(),
+				"startedAt" : scheduler.getStartedAt(),
+				"serverFixation" : scheduler.getServerFixation(),
 				"timezone"  : scheduler.getTimezone()?.getID() ?: "",
-				"tasks"     : tasks,
-				"taskCount" : tasks.len()
+				"taskCount" : scheduler.getRegisteredTasks().len(),
 			} )
 		} )
 
-		return jsonSerialize( result )
+		return result
+	}
+
+	/**
+	 * Get details for a specific scheduler by name, including its tasks and their records.
+	 *
+	 * @schedulerName The name of the scheduler to inspect
+	 */
+	@AITool
+	@mcpTool
+	function get_scheduler( required string schedulerName ) {
+		var schedulers = application.cbController.getSchedulerService().getSchedulers()
+		if ( !schedulers.keyExists( arguments.schedulerName ) ) {
+			return "No scheduler found with the name: #arguments.schedulerName#"
+		}
+		var scheduler = schedulers[ arguments.schedulerName ]
+		return {
+			"name"            : arguments.schedulerName,
+			"executor"        : scheduler.getExecutor()?.getName() ?: "default",
+			"started"         : scheduler.hasStarted(),
+			"startedAt"       : scheduler.getStartedAt(),
+			"shutdownTimeout" : scheduler.getShutdownTimeout(),
+			"timezone"        : scheduler.getTimezone()?.getID() ?: "",
+			"tasks" : scheduler.getRegisteredTasks(),
+			"taskCount"       : scheduler.getRegisteredTasks().len(),
+			"taskStats"       : scheduler.getTaskStats()
+		}
+	}
+
+	/**
+	 * Get the execution statistics for a specific task within a scheduler.
+	 *
+	 * @schedulerName The name of the scheduler that owns the task
+	 * @taskName      The name of the task to inspect
+	 */
+	@AITool
+	@mcpTool
+	function get_task_stats( required string schedulerName, required string taskName ) {
+		var schedulers = application.cbController.getSchedulerService().getSchedulers()
+		if ( !schedulers.keyExists( arguments.schedulerName ) ) {
+			return "No scheduler found with the name: #arguments.schedulerName#"
+		}
+		var scheduler = schedulers[ arguments.schedulerName ]
+		if ( !scheduler.hasTask( arguments.taskName ) ) {
+			return "No task found with the name '#arguments.taskName#' in scheduler '#arguments.schedulerName#'"
+		}
+		return scheduler.getTaskRecord( arguments.taskName ).task.getStats()
+	}
+
+	/**
+	 * Force-run a specific scheduled task immediately, bypassing any constraints or disabled flag.
+	 *
+	 * @schedulerName The name of the scheduler that owns the task
+	 * @taskName      The name of the task to run
+	 */
+	@AITool
+	@mcpTool
+	function run_task( required string schedulerName, required string taskName ) {
+		var schedulers = application.cbController.getSchedulerService().getSchedulers()
+		if ( !schedulers.keyExists( arguments.schedulerName ) ) {
+			return "No scheduler found with the name: #arguments.schedulerName#"
+		}
+		var scheduler = schedulers[ arguments.schedulerName ]
+		if ( !scheduler.hasTask( arguments.taskName ) ) {
+			return "No task found with the name '#arguments.taskName#' in scheduler '#arguments.schedulerName#'"
+		}
+		scheduler.getTaskRecord( arguments.taskName ).task.run( force = true )
+		return "Task '#arguments.taskName#' in scheduler '#arguments.schedulerName#' has been executed."
 	}
 
 }

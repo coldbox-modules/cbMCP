@@ -19,7 +19,7 @@ class {
 	@AITool
 	@mcpTool
 	function get_coldbox_settings() {
-		return jsonSerialize( application.cbController.getColdBoxSettings() )
+		return application.cbController.getColdBoxSettings()
 	}
 
 	/**
@@ -44,12 +44,12 @@ class {
 		var appPath = application.cbController.getSetting( "applicationPath" )
 		var layout  = detectAppLayout( appPath )
 
-		return jsonSerialize( {
+		return {
 			"engine"  : engine,
 			"version" : version,
 			"layout"  : layout,
 			"os"      : server.os.name & " " & server.os.version
-		} )
+		}
 	}
 
 	/**
@@ -80,7 +80,22 @@ class {
 			result[ "tests" ]      = directoryExists( appPath & "tests" )        ? directoryList( appPath & "tests",       true,  "array" ) : []
 		}
 
-		return jsonSerialize( result )
+		return result
+	}
+
+	/**
+	 * Get the value of a specific ColdBox application setting by key.
+	 *
+	 * @name The setting key to retrieve (e.g. "appName", "debugMode")
+	 */
+	@AITool
+	@mcpTool
+	function get_setting( required string name ) {
+		var controller = application.cbController
+		if ( !controller.settingExists( arguments.name ) ) {
+			return "No ColdBox setting found with the key: #arguments.name#"
+		}
+		return controller.getSetting( arguments.name )
 	}
 
 	// -------------------------------------------------------------------------

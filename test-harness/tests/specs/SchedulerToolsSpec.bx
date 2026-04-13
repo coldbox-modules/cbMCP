@@ -1,0 +1,110 @@
+class extends="coldbox.system.testing.BaseTestCase" {
+
+	/*********************************** LIFE CYCLE Methods ***********************************/
+
+	function beforeAll() {
+		super.beforeAll()
+		setup()
+	}
+
+	function afterAll() {
+		super.afterAll()
+	}
+
+	/*********************************** BDD SUITES ***********************************/
+
+	function run() {
+		describe( "SchedulerTools", function() {
+
+			beforeEach( function( currentSpec ) {
+				variables.tool = getInstance( "SchedulerTools@cbMCP" )
+			} )
+
+			it( "can get all schedulers as JSON", function() {
+				var result = tool.get_schedulers()
+				expect( result ).toBeArray()
+			} )
+
+			it( "returns scheduler entries with expected keys", function() {
+				var result = tool.get_schedulers()
+				// Not all apps have schedulers; if any exist, validate their shape
+				if ( result.len() > 0 ) {
+					var first = result[ 1 ]
+					expect( first ).toHaveKey( "name" )
+					expect( first ).toHaveKey( "executor" )
+					expect( first ).toHaveKey( "timezone" )
+					expect( first ).toHaveKey( "tasks" )
+					expect( first ).toHaveKey( "taskCount" )
+					expect( first.tasks ).toBeArray()
+					expect( first.taskCount ).toBe( first.tasks.len() )
+				}
+			} )
+
+			it( "tasks field is an array of string task names", function() {
+				var result = tool.get_schedulers()
+				result.each( ( scheduler ) => {
+					expect( scheduler.tasks ).toBeArray()
+					scheduler.tasks.each( ( taskName ) => {
+						expect( taskName ).toBeString()
+					} )
+					expect( scheduler.taskCount ).toBe( scheduler.tasks.len() )
+				} )
+			} )
+
+			// --- get_scheduler ---
+			it( "returns an error string for a non-existent scheduler", function() {
+				var result = tool.get_scheduler( "__nonExistentScheduler__" )
+				expect( result ).toBeString()
+				expect( result ).toInclude( "No scheduler found" )
+			} )
+
+			it( "can get details for an existing scheduler", function() {
+				var schedulers = tool.get_schedulers()
+				if ( schedulers.len() > 0 ) {
+					var schedulerName = schedulers[ 1 ].name
+					var result        = tool.get_scheduler( schedulerName )
+					expect( result ).toBeStruct()
+					expect( result ).toHaveKey( "name" )
+					expect( result ).toHaveKey( "started" )
+					expect( result ).toHaveKey( "taskCount" )
+					expect( result ).toHaveKey( "tasks" )
+					expect( result ).toHaveKey( "taskStats" )
+				}
+			} )
+
+			// --- get_task_stats ---
+			it( "returns an error string for a non-existent task stats lookup", function() {
+				var schedulers = tool.get_schedulers()
+				if ( schedulers.len() > 0 ) {
+					var result = tool.get_task_stats( schedulers[ 1 ].name, "__nonExistentTask__" )
+					expect( result ).toBeString()
+					expect( result ).toInclude( "No task found" )
+				}
+			} )
+
+			it( "can get stats for an existing task", function() {
+				var schedulers = tool.get_schedulers()
+				var found      = false
+				schedulers.each( ( s ) => {
+					if ( !found && s.tasks.len() > 0 ) {
+						var result = tool.get_task_stats( s.name, s.tasks[ 1 ] )
+						expect( result ).toBeStruct()
+						found = true
+					}
+				} )
+			} )
+
+			// --- run_task ---
+			it( "returns an error string when running a non-existent task", function() {
+				var schedulers = tool.get_schedulers()
+				if ( schedulers.len() > 0 ) {
+					var result = tool.run_task( schedulers[ 1 ].name, "__nonExistentTask__" )
+					expect( result ).toBeString()
+					expect( result ).toInclude( "No task found" )
+				}
+			} )
+
+		} )
+	}
+
+}

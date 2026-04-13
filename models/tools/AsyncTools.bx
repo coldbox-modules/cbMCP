@@ -9,34 +9,17 @@ class {
 	@AITool
 	@mcpTool
 	function get_executors() {
-		var asyncManager   = application.cbController.getAsyncManager()
-		var executorNames  = asyncManager.getExecutorNames()
-		var statusMap      = asyncManager.getExecutorStatusMap()
-		var result         = []
+		return application.cbController.getAsyncManager().getExecutorStatusMap()
+	}
 
-		executorNames.each( ( executorName ) => {
-			var status = statusMap[ executorName ] ?: {}
-			result.append( {
-				"name"                   : executorName,
-				"type"                   : status.type ?: "unknown",
-				"healthStatus"           : status.healthStatus ?: "unknown",
-				"healthReport"           : status.healthReport ?: {},
-				"activeCount"            : status.activeCount ?: 0,
-				"poolSize"               : status.poolSize ?: 0,
-				"corePoolSize"           : status.corePoolSize ?: 0,
-				"maximumPoolSize"        : status.maximumPoolSize ?: 0,
-				"largestPoolSize"        : status.largestPoolSize ?: 0,
-				"taskCount"              : status.taskCount ?: 0,
-				"completedTaskCount"     : status.completedTaskCount ?: 0,
-				"queueSize"              : status.queueSize ?: 0,
-				"queueRemainingCapacity" : status.queueRemainingCapacity ?: 0,
-				"isShutdown"             : status.isShutdown ?: false,
-				"isTerminated"           : status.isTerminated ?: false,
-				"isTerminating"          : status.isTerminating ?: false
-			} )
-		} )
-
-		return jsonSerialize( result )
+	/**
+	 * Get all the registered async executors names only
+	 * This is useful for populating dropdowns or selection lists where only the names are needed.
+	 */
+	@AITool
+	@mcpTool
+	function get_executor_names() {
+		return application.cbController.getAsyncManager().getExecutors().keyArray().sort()
 	}
 
 }

@@ -1,0 +1,69 @@
+class extends="coldbox.system.testing.BaseTestCase" {
+
+	/*********************************** LIFE CYCLE Methods ***********************************/
+
+	function beforeAll() {
+		super.beforeAll()
+		setup()
+	}
+
+	function afterAll() {
+		super.afterAll()
+	}
+
+	/*********************************** BDD SUITES ***********************************/
+
+	function run() {
+		describe( "AsyncTools", function() {
+
+			beforeEach( function( currentSpec ) {
+				variables.tool = getInstance( "AsyncTools@cbMCP" )
+			} )
+
+			it( "can get all async executors as a struct", function() {
+				var result = tool.get_executors()
+				expect( result ).toBeStruct()
+				expect( result.len() ).toBeGT( 0 )
+			} )
+
+			it( "returns executor entries with expected keys", function() {
+				var result   = tool.get_executors()
+				var firstKey = result.keyArray()[ 1 ]
+				var first    = result[ firstKey ]
+				expect( first ).toHaveKey( "type" )
+				expect( first ).toHaveKey( "healthStatus" )
+				expect( first ).toHaveKey( "activeCount" )
+				expect( first ).toHaveKey( "poolSize" )
+				expect( first ).toHaveKey( "taskCount" )
+				expect( first ).toHaveKey( "completedTaskCount" )
+				expect( first ).toHaveKey( "isShutdown" )
+				expect( first ).toHaveKey( "isTerminated" )
+			} )
+
+			it( "all executors report a shutdown and terminated status", function() {
+				var result = tool.get_executors()
+				result.each( ( name, executor ) => {
+					expect( executor.isShutdown ).toBeBoolean()
+					expect( executor.isTerminated ).toBeBoolean()
+				} )
+			} )
+
+			it( "can get all async executor names", function() {
+				var result = tool.get_executor_names()
+				expect( result ).toBeArray()
+				expect( result.len() ).toBeGT( 0 )
+				expect( result[ 1 ] ).toBeString()
+			} )
+
+			it( "executor names match the keys from get_executors", function() {
+				var names    = tool.get_executor_names()
+				var statuses = tool.get_executors()
+				names.each( ( name ) => {
+					expect( statuses ).toHaveKey( name )
+				} )
+			} )
+
+		} )
+	}
+
+}

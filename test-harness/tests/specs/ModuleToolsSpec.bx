@@ -1,0 +1,77 @@
+class extends="coldbox.system.testing.BaseTestCase" {
+
+	/*********************************** LIFE CYCLE Methods ***********************************/
+
+	function beforeAll() {
+		super.beforeAll()
+		setup()
+	}
+
+	function afterAll() {
+		super.afterAll()
+	}
+
+	/*********************************** BDD SUITES ***********************************/
+
+	function run() {
+		describe( "ModuleTools", function() {
+
+			beforeEach( function( currentSpec ) {
+				variables.tool = getInstance( "ModuleTools@cbMCP" )
+			} )
+
+			it( "can get the registered module registry as JSON", function() {
+				var result = tool.get_modules()
+				expect( result ).toBeArray()
+			} )
+
+			it( "returns module entries with expected keys", function() {
+				var result = tool.get_modules()
+				expect( result.len() ).toBeGT( 0 )
+				var first = result[ 1 ]
+				expect( first ).toHaveKey( "name" )
+				expect( first ).toHaveKey( "activated" )
+				expect( first ).toHaveKey( "registered" )
+			} )
+
+			it( "includes the cbMCP module in the registry", function() {
+				var result  = tool.get_modules()
+				var names   = result.map( ( m ) => m.name )
+				expect( names ).toInclude( "cbMCP" )
+			} )
+
+			it( "can get loaded module names as JSON", function() {
+				var result = tool.get_loaded_modules()
+				expect( result ).toBeArray()
+				expect( result.len() ).toBeGT( 0 )
+			} )
+
+			it( "loaded modules list includes cbMCP", function() {
+				var result = tool.get_loaded_modules()
+				expect( result ).toInclude( "cbMCP" )
+			} )
+
+			// --- get_module ---
+			it( "can get details for a specific module by name", function() {
+				var result = tool.get_module( "cbMCP" )
+				expect( result ).toBeStruct()
+				expect( result ).toHaveKey( "name" )
+				expect( result ).toHaveKey( "activated" )
+				expect( result ).toHaveKey( "registered" )
+				expect( result ).toHaveKey( "invocationPath" )
+				expect( result ).toHaveKey( "entryPoint" )
+				expect( result ).toHaveKey( "version" )
+				expect( result.name ).toBe( "cbMCP" )
+				expect( result.registered ).toBeTrue()
+			} )
+
+			it( "returns an error string for a non-existent module", function() {
+				var result = tool.get_module( "__NonExistentModule__XYZ__" )
+				expect( result ).toBeString()
+				expect( result ).toInclude( "No module found" )
+			} )
+
+		} )
+	}
+
+}

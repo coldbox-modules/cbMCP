@@ -1,0 +1,64 @@
+class extends="coldbox.system.testing.BaseTestCase" {
+
+	/*********************************** LIFE CYCLE Methods ***********************************/
+
+	function beforeAll() {
+		super.beforeAll()
+		setup()
+	}
+
+	function afterAll() {
+		super.afterAll()
+	}
+
+	/*********************************** BDD SUITES ***********************************/
+
+	function run() {
+		describe( "InterceptorTools", function() {
+
+			beforeEach( function( currentSpec ) {
+				variables.tool = getInstance( "InterceptorTools@cbMCP" )
+			} )
+
+			it( "can get all interceptors organized by interception points as a struct", function() {
+				var result = tool.get_interceptors()
+				expect( result ).toBeStruct()
+				expect( result.len() ).toBeGT( 0 )
+			} )
+
+			it( "returns interception point entries with expected keys", function() {
+				var result    = tool.get_interceptors()
+				var firstKey  = result.keyArray()[ 1 ]
+				var firstPoint = result[ firstKey ]
+				expect( firstPoint ).toHaveKey( "interceptionPoint" )
+				expect( firstPoint ).toHaveKey( "interceptors" )
+				expect( firstPoint ).toHaveKey( "count" )
+			} )
+
+			it( "returns interceptors as a struct per interception point", function() {
+				var result = tool.get_interceptors()
+				result.each( ( pointName, point ) => {
+					expect( point.interceptors ).toBeStruct()
+					expect( point.count ).toBe( point.interceptors.len() )
+				} )
+			} )
+
+			it( "can get all registered interception state names", function() {
+				var result = tool.get_interceptor_states()
+				expect( result ).toBeArray()
+				expect( result.len() ).toBeGT( 0 )
+				expect( result[ 1 ] ).toBeString()
+			} )
+
+			it( "interceptor states match the keys from get_interceptors", function() {
+				var states  = tool.get_interceptor_states()
+				var details = tool.get_interceptors()
+				states.each( ( state ) => {
+					expect( details ).toHaveKey( state )
+				} )
+			} )
+
+		} )
+	}
+
+}

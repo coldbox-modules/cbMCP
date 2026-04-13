@@ -1,0 +1,217 @@
+class extends="coldbox.system.testing.BaseTestCase" {
+
+	/*********************************** LIFE CYCLE Methods ***********************************/
+
+	function beforeAll() {
+		super.beforeAll()
+		setup()
+	}
+
+	function afterAll() {
+		super.afterAll()
+	}
+
+	/*********************************** BDD SUITES ***********************************/
+
+	function run() {
+		describe( "CacheBoxTools", function() {
+
+			beforeEach( function( currentSpec ) {
+				variables.tool        = getInstance( "CacheBoxTools@cbMCP" )
+				variables.cacheName   = tool.get_cache_names()[ 1 ]
+				// "default" is always an IColdBoxProvider in a ColdBox app
+				variables.cbCacheName = "default"
+			} )
+
+			// --- get_caches ---
+			it( "can get all CacheBox providers as a struct", function() {
+				var result = tool.get_caches()
+				expect( result ).toBeStruct()
+				expect( result.len() ).toBeGT( 0 )
+			} )
+
+			it( "returns cache entries with expected keys", function() {
+				var result   = tool.get_caches()
+				var firstKey = result.keyArray()[ 1 ]
+				var first    = result[ firstKey ]
+				expect( first ).toHaveKey( "name" )
+				expect( first ).toHaveKey( "provider" )
+				expect( first ).toHaveKey( "isEnabled" )
+				expect( first ).toHaveKey( "isReportingEnabled" )
+				expect( first ).toHaveKey( "stats" )
+				expect( first ).toHaveKey( "configuration" )
+			} )
+
+			it( "returns stats with expected counters", function() {
+				var result = tool.get_caches()
+				var stats  = result[ result.keyArray()[ 1 ] ].stats
+				expect( stats ).toHaveKey( "hits" )
+				expect( stats ).toHaveKey( "misses" )
+				expect( stats ).toHaveKey( "evictions" )
+				expect( stats ).toHaveKey( "objectCount" )
+				expect( stats ).toHaveKey( "performance" )
+				expect( stats ).toHaveKey( "lastReapDateTime" )
+			} )
+
+			// --- get_cache_names ---
+			it( "can get all cache names as a sorted array", function() {
+				var result = tool.get_cache_names()
+				expect( result ).toBeArray()
+				expect( result.len() ).toBeGT( 0 )
+				expect( result[ 1 ] ).toBeString()
+			} )
+
+			it( "cache names match the keys from get_caches", function() {
+				var names  = tool.get_cache_names()
+				var caches = tool.get_caches()
+				names.each( ( name ) => {
+					expect( caches ).toHaveKey( name )
+				} )
+			} )
+
+			// --- get_cache_stats ---
+			it( "can get stats for a specific cache", function() {
+				var result = tool.get_cache_stats( variables.cacheName )
+				expect( result ).toBeStruct()
+				expect( result ).toHaveKey( "hits" )
+				expect( result ).toHaveKey( "misses" )
+				expect( result ).toHaveKey( "evictions" )
+				expect( result ).toHaveKey( "objectCount" )
+				expect( result ).toHaveKey( "garbageCollections" )
+				expect( result ).toHaveKey( "performance" )
+				expect( result ).toHaveKey( "lastReapDateTime" )
+			} )
+
+			// --- get_cache_size ---
+			it( "can get the size of a specific cache", function() {
+				var result = tool.get_cache_size( variables.cacheName )
+				expect( result ).toBeNumeric()
+				expect( result ).toBeGTE( 0 )
+			} )
+
+			// --- get_cache_keys ---
+			it( "can get all keys from a specific cache", function() {
+				var result = tool.get_cache_keys( variables.cacheName )
+				expect( result ).toBeArray()
+			} )
+
+			it( "cache key count matches cache size", function() {
+				var keys = tool.get_cache_keys( variables.cacheName )
+				var size = tool.get_cache_size( variables.cacheName )
+				expect( keys.len() ).toBe( size )
+			} )
+
+			// --- cache_key_exists / get_cache_key_metadata ---
+			it( "can check if a key exists in a cache", function() {
+				// Store something first so there is at least one key
+				application.cbController.getCacheBox().getCache( variables.cacheName ).set( "mcpTestKey", "mcpTestValue", 0 )
+				var result = tool.cache_key_exists( variables.cacheName, "mcpTestKey" )
+				expect( result ).toBeBoolean()
+				expect( result ).toBeTrue()
+			} )
+
+			it( "can get metadata for a specific cached key", function() {
+				application.cbController.getCacheBox().getCache( variables.cacheName ).set( "mcpTestKey", "mcpTestValue", 0 )
+				var result = tool.get_cache_key_metadata( variables.cacheName, "mcpTestKey" )
+				expect( result ).toBeStruct()
+			} )
+
+			it( "returns false for a key that does not exist", function() {
+				var result = tool.cache_key_exists( variables.cacheName, "mcp__nonExistentKey__xyz" )
+				expect( result ).toBeBoolean()
+				expect( result ).toBeFalse()
+			} )
+
+			// --- get_store_metadata_report ---
+			it( "can get the full store metadata report for a cache", function() {
+				application.cbController.getCacheBox().getCache( variables.cacheName ).set( "mcpTestKey", "mcpTestValue", 0 )
+				var result = tool.get_store_metadata_report( variables.cacheName )
+				expect( result ).toBeStruct()
+			} )
+
+			it( "store metadata report keys match cache keys", function() {
+				var report = tool.get_store_metadata_report( variables.cacheName )
+				var keys   = tool.get_cache_keys( variables.cacheName )
+				keys.each( ( key ) => {
+					expect( report ).toHaveKey( key )
+				} )
+			} )
+
+			// --- clear_item ---
+			it( "can clear a specific item from a cache", function() {
+				application.cbController.getCacheBox().getCache( variables.cacheName ).set( "mcpClearMe", "value", 0 )
+				var removed = tool.clear_item( variables.cacheName, "mcpClearMe" )
+				expect( removed ).toBeBoolean()
+				expect( removed ).toBeTrue()
+				expect( tool.cache_key_exists( variables.cacheName, "mcpClearMe" ) ).toBeFalse()
+			} )
+
+			it( "clear_item returns false when key does not exist", function() {
+				var removed = tool.clear_item( variables.cacheName, "mcp__neverExisted__xyz" )
+				expect( removed ).toBeBoolean()
+				expect( removed ).toBeFalse()
+			} )
+
+			// --- clear_all ---
+			it( "can clear all items from a cache", function() {
+				application.cbController.getCacheBox().getCache( variables.cacheName ).set( "mcpKey1", "val1", 0 )
+				application.cbController.getCacheBox().getCache( variables.cacheName ).set( "mcpKey2", "val2", 0 )
+				var result = tool.clear_all( variables.cacheName )
+				expect( result ).toBeString()
+				expect( result ).toInclude( variables.cacheName )
+				expect( tool.get_cache_size( variables.cacheName ) ).toBe( 0 )
+			} )
+
+			// --- IColdBoxProvider: event clearing ---
+			it( "can clear all events from a ColdBox application cache", function() {
+				var result = tool.clear_all_events( variables.cbCacheName )
+				expect( result ).toBeString()
+				expect( result ).toInclude( variables.cbCacheName )
+			} )
+
+			it( "can clear a specific event from a ColdBox application cache", function() {
+				var result = tool.clear_event( variables.cbCacheName, "main.index" )
+				expect( result ).toBeString()
+				expect( result ).toInclude( "main.index" )
+			} )
+
+			it( "can clear multiple events at once from a ColdBox application cache", function() {
+				var result = tool.clear_event_multi( variables.cbCacheName, "main.index,main.list" )
+				expect( result ).toBeString()
+				expect( result ).toInclude( "main.index,main.list" )
+			} )
+
+			it( "returns error message when clearing events on a non-ColdBox cache", function() {
+				// Use a non-ColdBox cache name if one exists, otherwise skip gracefully
+				var names    = tool.get_cache_names()
+				var nonCbCaches = names.filter( ( n ) => n != "default" && n != "template" )
+				if ( nonCbCaches.len() ) {
+					var result = tool.clear_all_events( nonCbCaches[ 1 ] )
+					expect( result ).toBeString()
+					expect( result ).toInclude( "not a ColdBox application cache" )
+				}
+			} )
+
+			// --- IColdBoxProvider: view clearing ---
+			it( "can clear all views from a ColdBox application cache", function() {
+				var result = tool.clear_all_views( variables.cbCacheName )
+				expect( result ).toBeString()
+				expect( result ).toInclude( variables.cbCacheName )
+			} )
+
+			it( "can clear a specific view from a ColdBox application cache", function() {
+				var result = tool.clear_view( variables.cbCacheName, "main/index" )
+				expect( result ).toBeString()
+				expect( result ).toInclude( "main/index" )
+			} )
+
+			it( "can clear multiple views at once from a ColdBox application cache", function() {
+				var result = tool.clear_view_multi( variables.cbCacheName, "main/index,main/list" )
+				expect( result ).toBeString()
+				expect( result ).toInclude( "main/index,main/list" )
+			} )
+
+		} )
+	}
+
+}

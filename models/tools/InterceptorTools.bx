@@ -4,34 +4,37 @@
 class {
 
 	/**
-	 * Get all registered interceptors (event listeners) organized by interception points.
+	 * Get all registered interceptors for each interception point, including their metadata and count.
+	 * Returns a struct with interception points as keys and arrays of interceptor info as values.
 	 */
 	@AITool
 	@mcpTool
 	function get_interceptors() {
-		var interceptionStates = application.cbController.getInterceptorService().getInterceptionStates()
-		var result             = []
-
-		interceptionStates.each( ( pointName, state ) => {
-			var interceptors = []
-
-			if ( state.keyExists( "interceptors" ) && isArray( state.interceptors ) ) {
-				state.interceptors.each( ( interceptor ) => {
-					interceptors.append( {
-						"name"  : interceptor.getName(),
-						"class" : getMetadata( interceptor ).name ?: ""
-					} )
-				} )
-			}
-
-			result.append( {
-				"interceptionPoint" : pointName,
-				"interceptors"      : interceptors,
-				"count"             : interceptors.len()
+		return application.cbController
+			.getInterceptorService()
+			.getInterceptionStates()
+			.map( ( pointName, state ) => {
+				return {
+					"interceptionPoint" : pointName,
+					"interceptors"      : state.getPool()
+						.map( ( key, value ) => {
+							return {
+								"name"  : key,
+								"path" : getMetadata( value ).path
+							}
+						} ),
+					"count"             : state.getPool().len()
+				}
 			} )
-		} )
+	}
 
-		return jsonSerialize( result )
+	/**
+	 * Returns an array of all the registered interception states only
+	 */
+	@AITool
+	@mcpTool
+	function get_interceptor_states(){
+		return application.cbController.getInterceptorService().getInterceptionStates().keyArray()
 	}
 
 }

@@ -18,17 +18,17 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        cfengine: [ "boxlang@1" ]
-        coldboxVersion: [ "^8.0.0" ]
+        engine: [ "boxlang@1" ]
+        coldboxVersion: [ "be" ]
         experimental: [ false ]
         # Experimental: ColdBox BE vs All Engines
         include:
           - coldboxVersion: "be"
-            cfengine: "boxlang@1"
+            engine: "boxlang@be"
             experimental: true
-          - coldboxVersion: "^8.0.0"
-            cfengine: "boxlang@be"
-            experimental: true
+          # - coldboxVersion: "^8.0.0"
+          #   engine: "boxlang@be"
+          #   experimental: true
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v6
@@ -69,9 +69,9 @@ jobs:
           box package set dependencies.coldbox=${{ matrix.coldboxVersion }}
           box install
 
-      - name: Start ${{ matrix.cfengine }} Server
+      - name: Start ${{ matrix.engine }} Server
         run: |
-          box server start serverConfigFile="server-${{ matrix.cfengine }}.json" --noSaveSettings --debug
+          box server start serverConfigFile="server-${{ matrix.engine }}.json" --noSaveSettings --debug
           curl http://127.0.0.1:60299
 
       - name: Run Tests
@@ -85,7 +85,7 @@ jobs:
         with:
           report_paths: |
             test-harness/tests/results/**/*.xml
-          check_name: "TestBox Report ${{ matrix.cfengine }}-${{ matrix.coldboxVersion }}"
+          check_name: "TestBox Report ${{ matrix.engine }}-${{ matrix.coldboxVersion }}"
           include_passed: false
           fail_on_failure: true
           detailed_summary: true
@@ -94,20 +94,20 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v5
         with:
-          name: test-results-${{ matrix.cfengine }}-${{ matrix.coldboxVersion }}
+          name: test-results-${{ matrix.engine }}-${{ matrix.coldboxVersion }}
           path: |
             test-harness/tests/results/**/*
 
       - name: Show Server Log On Failures
         if: ${{ failure() }}
         run: |
-          box server log serverConfigFile="server-${{ matrix.cfengine }}.json"
+          box server log serverConfigFile="server-${{ matrix.engine }}.json"
 
       - name: Upload Debug Logs To Artifacts
         if: ${{ failure() }}
         uses: actions/upload-artifact@v5
         with:
-          name: Failure Debugging Info - ${{ matrix.cfengine }} - ${{ matrix.coldboxVersion }}
+          name: Failure Debugging Info - ${{ matrix.engine }} - ${{ matrix.coldboxVersion }}
           path: |
             .engine/**/logs/*
             .engine/**/WEB-INF/cfusion/logs/*
@@ -121,6 +121,6 @@ jobs:
           SLACK_COLOR: ${{ job.status }} # or a specific color like 'green' or '#ff00ff'
           SLACK_ICON_EMOJI: ":bell:"
           SLACK_MESSAGE: '${{ github.repository }} tests failed :cry:'
-          SLACK_TITLE: ${{ github.repository }} Tests For ${{ matrix.cfengine }} with ColdBox ${{ matrix.coldboxVersion }} failed
+          SLACK_TITLE: ${{ github.repository }} Tests For ${{ matrix.engine }} with ColdBox ${{ matrix.coldboxVersion }} failed
           SLACK_USERNAME: CI
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}

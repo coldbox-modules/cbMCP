@@ -3,24 +3,96 @@
  */
 class {
 
+	/*********************************** PUBLIC TOOLS ***********************************/
+
 	/**
 	 * Get all application handlers (controllers) including their public actions/methods.
+	 * Returns a struct with two keys:
+	 * - core    : array of core application handlers
+	 * - modules : struct keyed by module name, each value an array of that module's handlers
 	 */
 	@AITool
 	@mcpTool
 	function get_handlers() {
-		var controller              = application.cbController
-		var handlerService          = controller.getHandlerService()
-		var handlersPath            = controller.getSetting( "handlersPath" )
-		var handlersInvocationPath  = controller.getSetting( "handlersInvocationPath" )
-		var handlers                = handlerService.getHandlerListing( handlersPath )
-		var result                  = []
+		var controller = application.cbController
 
-		handlers.each( ( handler ) => {
+		// Core handlers
+		var core = buildHandlerList(
+			controller.getSetting( "handlersPath" ),
+			controller.getSetting( "handlersInvocationPath" )
+		)
+
+		// Module handlers — keyed by module name
+		var modules       = {}
+		var moduleConfigs = controller.getSetting( "modules" )
+		controller.getModuleService().getLoadedModules().each( ( moduleName ) => {
+			var cfg = moduleConfigs[ moduleName ]
+			if ( !isNull( cfg ) && len( cfg?.handlerPhysicalPath ?: "" ) ) {
+				modules[ moduleName ] = buildHandlerList(
+					cfg.handlerPhysicalPath,
+					cfg.handlerInvocationPath
+				)
+			}
+		} )
+
+		return { "core" : core, "modules" : modules }
+	}
+
+	/**
+	 * Get metadata and public actions for a specific handler by name.
+	 * Optionally scope to a module by providing its name.
+	 *
+	 * @handlerName The handler name as registered (e.g. "Main", "api/Users")
+	 * @moduleName  Optional module name to look up a module handler instead of a core handler
+	 */
+	@AITool
+	@mcpTool
+	function get_handler( required string handlerName, string moduleName = "" ) {
+		var controller = application.cbController
+		var invocationPath = len( arguments.moduleName )
+			? ( controller.getSetting( "modules" )[ arguments.moduleName ]?.handlerInvocationPath ?: "" )
+			: controller.getSetting( "handlersInvocationPath" )
+		if ( !len( invocationPath ) ) {
+			return { "handler" : arguments.handlerName, "error" : "Module '#arguments.moduleName#' not found or has no handlers" }
+		}
+		try {
+			var metadata = getClassMetadata( invocationPath & "." & arguments.handlerName )
+			var actions  = []
+			if ( metadata.keyExists( "functions" ) ) {
+				metadata.functions.each( ( func ) => {
+					if ( func.access == "public" ) {
+						actions.append( { "name" : func.name } )
+					}
+				} )
+			}
+			return {
+				"handler"        : arguments.handlerName,
+				"invocationPath" : invocationPath & "." & arguments.handlerName,
+				"actions"        : actions,
+				"extends"        : metadata.extends?.name ?: ""
+			}
+		} catch ( any e ) {
+			return { "handler" : arguments.handlerName, "error" : "Could not load metadata: " & e.message }
+		}
+	}
+
+	/*********************************** PRIVATE HELPERS ***********************************/
+
+	/**
+	 * Scans a physical handlers path and builds an array of handler metadata structs.
+	 * Each entry contains handler name, invocation path, public actions, and extends.
+	 *
+	 * @handlersPath   The physical directory path to scan for handlers
+	 * @invocationPath The dot-notation invocation path prefix for loading class metadata
+	 */
+	private array function buildHandlerList( required string handlersPath, required string invocationPath ) {
+		var result         = []
+		var localHandlers  = application.cbController.getHandlerService().getHandlerListing( arguments.handlersPath )
+		var localInvPath   = arguments.invocationPath
+		localHandlers.each( ( handler ) => {
 			try {
-				var metadata = getClassMetadata( handlersInvocationPath & "." & handler )
+				var metadata = getClassMetadata( localInvPath & "." & handler )
 				var actions  = []
-
 				if ( metadata.keyExists( "functions" ) ) {
 					metadata.functions.each( ( func ) => {
 						if ( func.access == "public" ) {
@@ -28,10 +100,9 @@ class {
 						}
 					} )
 				}
-
 				result.append( {
 					"handler"        : handler,
-					"invocationPath" : handlersInvocationPath & "." & handler,
+					"invocationPath" : localInvPath & "." & handler,
 					"actions"        : actions,
 					"extends"        : metadata.extends?.name ?: ""
 				} )
@@ -44,37 +115,6 @@ class {
 		} )
 
 		return result
-	}
-
-	/**
-	 * Get metadata and public actions for a specific handler by name.
-	 *
-	 * @handlerName The handler name as registered (e.g. "Main", "api/Users")
-	 */
-	@AITool
-	@mcpTool
-	function get_handler( required string handlerName ) {
-		var controller             = application.cbController
-		var handlersInvocationPath = controller.getSetting( "handlersInvocationPath" )
-		try {
-			var metadata = getClassMetadata( handlersInvocationPath & "." & arguments.handlerName )
-			var actions  = []
-			if ( metadata.keyExists( "functions" ) ) {
-				metadata.functions.each( ( func ) => {
-					if ( func.access == "public" ) {
-						actions.append( { "name" : func.name } )
-					}
-				} )
-			}
-			return {
-				"handler"        : arguments.handlerName,
-				"invocationPath" : handlersInvocationPath & "." & arguments.handlerName,
-				"actions"        : actions,
-				"extends"        : metadata.extends?.name ?: ""
-			}
-		} catch ( any e ) {
-			return { "handler" : arguments.handlerName, "error" : "Could not load metadata: " & e.message }
-		}
 	}
 
 }

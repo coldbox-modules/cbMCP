@@ -15,7 +15,7 @@ class {
 	// Model Namespace
 	this.modelNamespace		= "cbMCP"
 
-	// Engine Mapping
+	// Class Mapping
 	this.classMapping			= "cbMCP"
 
 	// Dependencies

@@ -19,3 +19,7 @@ modules/**
 
 # log files
 logs/**
+
+# AI
+.opencode/**
+.agents/skills/**

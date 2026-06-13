@@ -20,7 +20,6 @@
 	},
 	"devDependencies" 	:{
 		"commandbox-boxlang":"*",
-		"commandbox-cfformat":"*",
         "commandbox-docbox":"*"
 	},
 	"ignore":[
@@ -29,14 +28,10 @@
 		"/server*.json"
     ],
 	"scripts":{
-		"setupTemplate": "task run taskFile=build/SetupTemplate.cfc",
 		"build:module":"task run taskFile=build/Build.cfc :projectName=`package show slug` :version=`package show version`",
 		"build:docs":"task run taskFile=build/Build.cfc target=docs :projectName=`package show slug` :version=`package show version`",
         "install:dependencies":"install && cd test-harness && install",
 		"release":"recipe build/release.boxr",
-        "format":"cfformat run helpers,models,test-harness/tests/,ModuleConfig.bx --overwrite",
-        "format:watch":"cfformat watch helpers,models,test-harness/tests/,ModuleConfig.bx ./.cfformat.json",
-        "format:check":"cfformat check helpers,models,test-harness/tests/,ModuleConfig.bx ./.cfformat.json",
 		"start:boxlang" : "server start serverConfigFile=server-boxlang@1.json",
 		"stop:boxlang" : "server stop serverConfigFile=server-boxlang@1.json",
 		"logs:boxlang" : "server log serverConfigFile=server-boxlang@1.json",

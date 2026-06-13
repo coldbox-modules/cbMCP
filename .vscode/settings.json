@@ -1,14 +1,6 @@
 {
-	"boxlang.cfml.mappings": [
-		{
-			"logicalPath": "/coldbox",
-			"directoryPath": "./test-harness/coldbox",
-			"isPhysicalDirectoryPath": false
-		},
-		{
-			"logicalPath": "/testbox",
-			"directoryPath": "./test-harness/testbox",
-			"isPhysicalDirectoryPath": false
-		}
-	]
+	"boxlang.mappings": {
+		"coldbox": "./test-harness/coldbox",
+		"testbox": "./test-harness/testbox"
+	}
 }

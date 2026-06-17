@@ -4,7 +4,7 @@
  * ---
  * MCP Tools for WireBox dependency injection container introspection.
  */
-class {
+class extends="BaseTool"{
 
 	/**
 	 * Get all WireBox dependency injection mappings (models/services registered in the DI container).

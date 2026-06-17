@@ -4,7 +4,7 @@
  * ---
  * MCP Tools for CacheBox cache provider introspection.
  */
-class {
+class extends="BaseTool"{
 
 	/**
 	 * Get all registered CacheBox cache providers and their statistics.

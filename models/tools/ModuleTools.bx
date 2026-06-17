@@ -4,7 +4,7 @@
  * ---
  * MCP Tools for ColdBox module management: registered modules and their configuration.
  */
-class {
+class extends="BaseTool"{
 
 	/**
 	 * Get all registered modules with their configuration and status (activated, paths, settings, etc.)

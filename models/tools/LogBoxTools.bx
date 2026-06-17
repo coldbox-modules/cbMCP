@@ -4,7 +4,7 @@
  * ---
  * MCP Tools for LogBox logging framework introspection.
  */
-class {
+class extends="BaseTool"{
 
 	/**
 	 * Get LogBox general info: version, ID, registered logger names, and registered appender names.

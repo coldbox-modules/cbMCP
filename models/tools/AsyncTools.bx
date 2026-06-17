@@ -4,7 +4,7 @@
  * ---
  * MCP Tools for ColdBox async executor introspection.
  */
-class {
+class extends="BaseTool"{
 
 	/**
 	 * Get all registered async executors with their status, thread pool info, and task statistics.

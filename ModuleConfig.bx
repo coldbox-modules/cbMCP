@@ -28,7 +28,61 @@ class {
 	 * Configure Module
 	 */
 	function configure(){
-		settings = {
+		variables.settings = {
+			// authToken controls who can access the MCP server and which tools each token may use.
+			// This is useful for connecting chat agents with different capabilities, or for restricting access to certain tools.
+			//
+			// Three supported shapes:
+			//
+			// 1. Simple string — one token, full access to all tools:
+			//    authToken: "my-secret-token"
+			//
+			// 2. Array of structs with a profile reference (recommended):
+			//    authToken: [
+			//        { token: "admin-token",   profile: "admin"    },
+			//        { token: "monitor-token", profile: "readonly" }
+			//    ]
+			//    Profile names map to the securityProfiles setting below.
+			//
+			// 3. Array of structs with inline tool lists (glob patterns supported):
+			//    authToken: [
+			//        { token: "admin-token",    includedTools: ["*"] },
+			//        { token: "jvm-token",      includedTools: ["jvm_*"], excludedTools: ["jvm_trigger_gc"] }
+			//    ]
+			//    includedTools defaults to ["*"] (all); excludedTools defaults to [] (none).
+			//
+			// Leave empty ("") to disable authentication (open access).
+			// Clients must send:  Authorization: Bearer <token>
+			authToken          : [],
+			// Named security profiles. Each profile defines includedTools and excludedTools arrays.
+			// Glob wildcards are supported: "*" (any sequence) and "?" (one character).
+			// Profile names are referenced from authToken entries via the `profile` field.
+			//
+			// Two profiles are built in and always available (you can override them here):
+			//   admin    — unrestricted access to every tool
+			//   readonly — read-only observability: all *_get*, *_has*, *_search*, *_read* operations
+			//
+			// Add custom profiles as needed, for example:
+			//   operator: { includedTools: ["*_get*","*_has*","module_reload*","scheduler_*"], excludedTools: ["app_stop","runtime_toggle_debug_mode"] }
+			securityProfiles   : {
+				admin    : { includedTools: [ "*" ],                                              excludedTools: [] },
+				readonly : { includedTools: [ "*_get*", "*_has*", "*_search*", "*_read*" ],       excludedTools: [] }
+			},
+			// Allowed IP addresses for request filtering. When non-empty, only requests from these IPs are accepted.
+			// Supports individual IPs (e.g., "127.0.0.1") and CIDR ranges (e.g., "192.168.0.0/24").
+			// Empty array means no IP filtering (all IPs allowed).
+			allowedIPs         : [ "127.0.0.1" ],
+			// CORS allowed origins (array of strings, supports wildcards like *.domain.com)
+			// Empty array means no CORS headers - secure by default
+			corsAllowedOrigins : [],
+			// Enable MCP server statistics tracking (default: true)
+			enableStats        : true,
+			// Maximum HTTP request body size in bytes. 0 = no limit.
+			maxRequestBodySize : 0,
+			// Tool whitelist. ["*"] = include all. Specific names = only those tools.
+			includedTools      : [ "*" ],
+			// Tool names to exclude after the included list is applied.
+			excludedTools      : []
 		}
 	}
 
@@ -36,7 +90,7 @@ class {
 	 * Fired when the module is registered and activated.
 	 */
 	function onLoad(){
-		var mcpServer = new models.ColdBoxMCP()
+		var mcpServer = new models.ColdBoxMCP( variables.settings )
 		getBoxRuntime()
 			.getGlobalService( "aiService" )
 			.putServer( "cbMCP", mcpServer )

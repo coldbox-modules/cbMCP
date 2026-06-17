@@ -9,10 +9,31 @@
  */
 class extends="bxModules.bxai.models.mcp.MCPServer" {
 
+	// === Properties ===
+	property name="tokenRegistry"   type="struct" default={};
+	property name="profileRegistry" type="struct" default={};
+	property name="settings"        type="struct" default={};
+
+	/**
+	 * Token registry: map of token string -> { includedTools, excludedTools }.
+	 * Populated at init from the normalised authToken setting.
+	 */
+	variables.tokenRegistry = {}
+
+	/**
+	 * Profile registry: map of profile name -> { includedTools, excludedTools }.
+	 * Populated by normalizeProfiles() during init() before normalizeAuthTokens().
+	 */
+	variables.profileRegistry = {}
+
 	/**
 	 * Initialize the ColdBox MCP server.
+	 *
+	 * @settings The module settings struct, including authTokens and profiles.
+	 *          This is normally provided by the module's ModuleConfig.bx onLoad() method
+	 *          and is used to configure the server's authentication and tool access.
 	 */
-	function init() {
+	function init( struct settings = {} ) {
 		super.init(
 			name        = "cbMCP",
 			description = "An MCP Server for ColdBox AI Tools",
@@ -22,11 +43,139 @@ class extends="bxModules.bxai.models.mcp.MCPServer" {
 			force       = true
 		)
 
+		variables.settings = arguments.settings
+
+		// Build the profile registry first (profiles are referenced by authToken entries).
+		normalizeProfiles()
+
+		// Build the token registry from the (possibly multi-format) authToken setting
+		// and register the onRequest callback when at least one token is configured.
+		normalizeAuthTokens()
+		setupAuthCallback()
+
+		// Configure CORS if origins are specified
+		if (
+			isArray( settings.corsAllowedOrigins ?: [] )
+			&&
+			settings.corsAllowedOrigins.len()
+		) {
+			this.withCors( settings.corsAllowedOrigins )
+		}
+
+		// Configure IP allowlist if specified
+		if (
+			isArray( settings.allowedIPs ?: [] )
+			&&
+			settings.allowedIPs.len()
+		) {
+			this.withAllowedIPs( settings.allowedIPs )
+		}
+
+		// Enable statistics tracking if configured (default true)
+		if ( settings.enableStats ?: true ) {
+			this.enableStats()
+		}
+
+		// Max request body size configuration (default 0 = no limit)
+		this.withBodyLimit( settings.maxRequestBodySize ?: 0 )
+
+		// Register all tools, resources and prompts for the server
 		this.scan( "cbMCP.models.tools" )
 		registerResources()
 		registerPrompts()
 
+		// Apply tool filtering: includedTools whitelist, then excludedTools blacklist
+		applyToolFilters()
+
 		return this
+	}
+
+	/**
+	 * ------------------------------------------------------------------------------
+	 * MCP Overrides
+	 * ------------------------------------------------------------------------------
+	 */
+
+	 /**
+	 * Override listTools() to apply per-token tool filtering when a token config is
+	 * present in the request scope (set by the onRequest callback).
+	 */
+	@override
+	array function listTools() {
+		var allTools = super.listTools()
+		if ( !isNull( request._mcpTokenConfig ) ) {
+			return filterToolsByTokenConfig( allTools, request._mcpTokenConfig )
+		}
+		return allTools
+	}
+
+	/**
+	 * Override handleRequest() to enforce per-token tool access on tools/call
+	 * before delegating to the parent implementation.
+	 */
+	@override
+	struct function handleRequest( required any requestBody ) {
+		if ( !isNull( request._mcpTokenConfig ) ) {
+			var thisRequest = isStruct( arguments.requestBody )
+				? arguments.requestBody
+				: jsonDeserialize( arguments.requestBody )
+
+			if ( ( thisRequest.method ?: "" ).trim() == "tools/call" ) {
+				var toolName = thisRequest.params?.name ?: ""
+				if ( len( toolName ) && !isTokenAllowedTool( toolName, request._mcpTokenConfig ) ) {
+					return {
+						"jsonrpc" : "2.0",
+						"error"   : {
+							"code"   : -32601,
+							"message": "Tool '#toolName#' is not accessible with the provided token"
+						},
+						"id": thisRequest?.id ?: ""
+					}
+				}
+			}
+		}
+		return super.handleRequest( arguments.requestBody )
+	}
+
+	/**
+	 * ------------------------------------------------------------------------------
+	 * Private Helper Methods
+	 * ------------------------------------------------------------------------------
+	 */
+
+	 /**
+	 * Apply includedTools and excludedTools filtering after scanning.
+	 * Patterns support glob wildcards: "*" (any sequence) and "?" (one character).
+	 * includedTools: ["*"] means all; specific names or patterns means only those.
+	 * excludedTools: array of tool names or patterns to remove.
+	 */
+	private void function applyToolFilters() {
+		var included = variables.settings.includedTools ?: [ "*" ]
+		var excluded = variables.settings.excludedTools ?: []
+
+		// Whitelist: if not pure wildcard, unregister anything not matching a pattern
+		if ( !arrayContains( included, "*" ) ) {
+			var currentTools = this.getTools()
+			currentTools.each(
+					( name, tool ) => {
+						if ( !toolMatchesAnyPattern( name, included ) ) {
+							this.unregisterTool( name )
+						}
+					}
+				)
+		}
+
+		// Blacklist: unregister tools matching any excluded pattern
+		if ( isArray( excluded ) && excluded.len() ) {
+			var currentTools = this.getTools()
+			currentTools.each(
+					( name, tool ) => {
+						if ( toolMatchesAnyPattern( name, excluded ) ) {
+							this.unregisterTool( name )
+						}
+					}
+				)
+		}
 	}
 
 	/**
@@ -117,6 +266,229 @@ class extends="bxModules.bxai.models.mcp.MCPServer" {
 		new cbMCP.models.prompts.HandlerPrompts().register( this )
 		new cbMCP.models.prompts.CacheBoxPrompts().register( this )
 		new cbMCP.models.prompts.InterceptorPrompts().register( this )
+	}
+
+	/**
+	 * Build the profile registry from `settings.securityProfiles`.
+	 * Each profile is a struct with `includedTools` and `excludedTools` arrays.
+	 * Glob patterns are supported (e.g. "*_get*", "jvm_*").
+	 *
+	 * Two profiles are always available (can be overridden in settings):
+	 *   admin    — full unrestricted access
+	 *   readonly — all *_get*, *_has*, *_search*, *_read* operations
+	 */
+	private void function normalizeProfiles() {
+		// Seed with built-in defaults; user settings can override them by name
+		variables.profileRegistry = {
+			"admin" : {
+				includedTools : [ "*" ],
+				excludedTools : []
+			},
+			"readonly" : {
+				includedTools : [ "*_get*", "*_has*", "*_search*", "*_read*" ],
+				excludedTools : []
+			}
+		}
+
+		var userProfiles = variables.settings.securityProfiles ?: {}
+		if ( !isStruct( userProfiles ) || userProfiles.isEmpty() ) {
+			return
+		}
+
+		userProfiles.each( ( name, profile ) => {
+			if ( !isStruct( profile ) ) return
+			variables.profileRegistry[ name ] = {
+				includedTools : ( isArray( profile.includedTools ?: "" ) ? profile.includedTools : [ "*" ] ),
+				excludedTools : ( isArray( profile.excludedTools ?: "" ) ? profile.excludedTools : [] )
+			}
+		} )
+	}
+
+	/**
+	 * Normalise the `authToken` module setting into a flat token registry:
+	 *   variables.tokenRegistry = { "<token>" : { includedTools, excludedTools } }
+	 *
+	 * Accepted input shapes:
+	 *   1. Simple string — one token, all tools allowed
+	 *   2. Array of structs — each struct must have a `token` field plus one of:
+	 *      - `profile` — name of a registered security profile
+	 *      - `includedTools` / `excludedTools` — inline glob arrays
+	 */
+	private void function normalizeAuthTokens() {
+		variables.tokenRegistry = {}
+		var raw = variables.settings.authToken ?: ""
+
+		if ( isSimpleValue( raw ) && len( trim( raw ) ) ) {
+			// Shape 1: plain string — full access
+			variables.tokenRegistry[ trim( raw ) ] = {
+				includedTools : [ "*" ],
+				excludedTools : []
+			}
+		} else if ( isArray( raw ) ) {
+			// Shape 2: array of structs — delegate resolution to resolveToolConfig()
+			raw.each( ( entry ) => {
+				if ( isStruct( entry ) && len( trim( entry.token ?: "" ) ) ) {
+					variables.tokenRegistry[ trim( entry.token ) ] = resolveToolConfig( entry )
+				}
+			} )
+		}
+	}
+
+	/**
+	 * Register the onRequest callback that validates the Bearer token and stashes
+	 * the matched token config into the request scope for downstream filtering.
+	 * No-op when the token registry is empty (open access).
+	 */
+	private void function setupAuthCallback() {
+		if ( variables.tokenRegistry.isEmpty() ) {
+			return
+		}
+
+		this.onRequest( ( requestData ) => {
+			var authHeader = ( requestData.headers[ "Authorization" ] ?: "" )
+			var token      = ""
+
+			if ( authHeader.findNoCase( "Bearer " ) ) {
+				token = authHeader.replaceNoCase( "Bearer ", "" ).trim()
+			}
+
+			if ( !len( token ) || !variables.tokenRegistry.keyExists( token ) ) {
+				throw( type: "cbMCPAuth", message: "Unauthorized: Invalid or missing Bearer token" )
+			}
+
+			// Stash token config in the per-request (thread-local) request scope
+			// so that listTools() and handleRequest() can apply per-token filtering.
+			request._mcpTokenConfig = variables.tokenRegistry[ token ]
+
+			return requestData
+		} )
+
+		/**
+		 * Resolve the effective tool config for a token entry or admin key entry.
+		 * Resolution order (first match wins):
+		 *   1. entry.profile exists and matches a known profile → use that profile
+		 *   2. entry.profile set but unknown → log warning, fall through
+		 *   3. entry has inline includedTools / excludedTools → use those
+		 *   4. Global variables.settings.includedTools / excludedTools → final fallback
+		 *
+		 * @entry  The token or admin-key struct from the settings array
+		 *
+		 * @return Struct with includedTools (array) and excludedTools (array)
+		 */
+		private struct function resolveToolConfig( required struct entry ) {
+			var profileName = trim( arguments.entry.profile ?: "" )
+
+			// 1 & 2: Profile reference
+			if ( len( profileName ) ) {
+				if ( variables.profileRegistry.keyExists( profileName ) ) {
+					return variables.profileRegistry[ profileName ]
+				}
+				// Unknown profile — warn and fall through
+				writeLog(
+					text = "cbMCP: Unknown security profile '#profileName#' — falling back to inline / global defaults",
+					type = "warning",
+					log: "cbMCP"
+				)
+			}
+
+			// 3: Inline definition
+			if ( isArray( arguments.entry.includedTools ?: "" ) || isArray( arguments.entry.excludedTools ?: "" ) ) {
+				return {
+					includedTools : ( isArray( arguments.entry.includedTools ?: "" ) ? arguments.entry.includedTools : [ "*" ] ),
+					excludedTools : ( isArray( arguments.entry.excludedTools ?: "" ) ? arguments.entry.excludedTools : [] )
+				}
+			}
+
+			// 4: Global defaults
+			return {
+				includedTools : ( isArray( variables.settings.includedTools ?: "" ) ? variables.settings.includedTools : [ "*" ] ),
+				excludedTools : ( isArray( variables.settings.excludedTools ?: "" ) ? variables.settings.excludedTools : [] )
+			}
+		}
+	}
+
+	/**
+	 * Test whether a tool name matches a single glob pattern.
+	 * Supports "*" (any sequence of characters) and "?" (exactly one character).
+	 * Matching is case-insensitive. Tool names only contain [a-z0-9_] so no
+	 * additional regex metacharacter escaping is required.
+	 *
+	 * @toolName The tool name to test
+	 * @pattern  A glob pattern string
+	 *
+	 * @return true if the tool name matches the pattern
+	 */
+	private boolean function toolMatchesPattern(
+		required string toolName,
+		required string pattern
+	) {
+		// Fast path: bare wildcard matches everything
+		if ( arguments.pattern == "*" ) {
+			return true
+		}
+		// Convert glob wildcards to regex equivalents and anchor the pattern
+		var regex = "^" & arguments.pattern.replace( "*", ".*", "all" ).replace( "?", ".", "all" ) & "$"
+		return reFindNoCase( regex, arguments.toolName ) > 0
+	}
+
+	/**
+	 * Test whether a tool name matches any pattern in a list of glob patterns.
+	 *
+	 * @toolName The tool name to test
+	 * @patterns Array of glob pattern strings
+	 *
+	 * @return true if the tool name matches at least one pattern
+	 */
+	private boolean function toolMatchesAnyPattern(
+		required string toolName,
+		required array patterns
+	) {
+		return arguments.patterns.some( pattern => toolMatchesPattern( toolName, arguments.pattern ) )
+	}
+
+	/**
+	 * Filter a tools array to only those allowed by the given token config.
+	 *
+	 * @tools  Array of tool definition structs (name, description, inputSchema)
+	 * @config Token config struct: { includedTools, excludedTools }
+	 *
+	 * @return Filtered array
+	 */
+	private array function filterToolsByTokenConfig(
+		required array tools,
+		required struct config
+	) {
+		var tokenConfig = arguments.config
+		return arguments.tools.filter( ( tool ) => isTokenAllowedTool( tool.name, tokenConfig ) )
+	}
+
+	/**
+	 * Check whether a tool name is permitted by a token config.
+	 * Both includedTools and excludedTools support glob patterns (e.g. "jvm*", "cache_get*").
+	 *
+	 * @toolName The tool name to test
+	 * @config   Token config struct: { includedTools, excludedTools }
+	 *
+	 * @return true if the tool is allowed
+	 */
+	private boolean function isTokenAllowedTool(
+		required string toolName,
+		required struct config
+	) {
+		var included = ( isArray( config.includedTools ?: "" ) ? config.includedTools : [ "*" ] )
+		var excluded = ( isArray( config.excludedTools ?: "" ) ? config.excludedTools : [] )
+
+		// Whitelist check (supports glob patterns)
+		if ( !toolMatchesAnyPattern( arguments.toolName, included ) ) {
+			return false
+		}
+
+		// Blacklist check (supports glob patterns)
+		if ( toolMatchesAnyPattern( arguments.toolName, excluded ) ) {
+			return false
+		}
+
+		return true
 	}
 
 }

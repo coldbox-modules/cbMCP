@@ -4,7 +4,7 @@
  * ---
  * MCP Tools for ColdBox task scheduler introspection.
  */
-class {
+class extends="BaseTool"{
 
 	/*********************************** PUBLIC TOOLS ***********************************/
 

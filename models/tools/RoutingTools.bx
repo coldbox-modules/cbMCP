@@ -4,7 +4,7 @@
  * ---
  * MCP Tools for ColdBox URL routing: application routes and module routes.
  */
-class {
+class extends="BaseTool"{
 
 	/**
 	 * List the application's registered HTTP routes.

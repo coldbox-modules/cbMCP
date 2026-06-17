@@ -4,7 +4,7 @@
  * ---
  * MCP Tools for ColdBox handler (controller) introspection.
  */
-class {
+class extends="BaseTool"{
 
 	/*********************************** PUBLIC TOOLS ***********************************/
 

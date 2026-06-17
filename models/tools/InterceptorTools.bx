@@ -4,7 +4,7 @@
  * ---
  * MCP Tools for ColdBox interceptor introspection.
  */
-class {
+class extends="BaseTool"{
 
 	/**
 	 * Get all registered interceptors for each interception point, including their metadata and count.

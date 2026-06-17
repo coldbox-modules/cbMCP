@@ -45,8 +45,5 @@
     },
     "testbox":{
         "runner":"http://localhost:60299/tests/runner.bxm"
-    },
-    "installPaths":{
-        "testbox":"/Users/lmajano/Sites/projects/commandbox-modules/testbox-cli/testbox/"
     }
 }

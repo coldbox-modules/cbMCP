@@ -10,9 +10,9 @@ class {
 	 * Get all registered interceptors for each interception point, including their metadata and count.
 	 * Returns a struct with interception points as keys and arrays of interceptor info as values.
 	 */
-	@AITool
 	@mcpTool
-	function get_interceptors() {
+	@AITool
+	function interceptor_get_all() {
 		return application.cbController
 			.getInterceptorService()
 			.getInterceptionStates()
@@ -34,9 +34,9 @@ class {
 	/**
 	 * Returns an array of all the registered interception states only
 	 */
-	@AITool
 	@mcpTool
-	function get_interceptor_states(){
+	@AITool
+	function interceptor_get_states() {
 		return application.cbController.getInterceptorService().getInterceptionStates().keyArray()
 	}
 

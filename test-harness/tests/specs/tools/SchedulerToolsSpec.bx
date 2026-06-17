@@ -21,12 +21,12 @@ class extends="coldbox.system.testing.BaseTestCase" {
 			} )
 
 			it( "can get all schedulers as JSON", function() {
-				var result = tool.get_schedulers()
+				var result = tool.scheduler_get_all()
 				expect( result ).toBeArray()
 			} )
 
 			it( "returns scheduler entries with expected keys", function() {
-				var result = tool.get_schedulers()
+				var result = tool.scheduler_get_all()
 				// Not all apps have schedulers; if any exist, validate their shape
 				if ( result.len() > 0 ) {
 					var first = result[ 1 ]
@@ -41,7 +41,7 @@ class extends="coldbox.system.testing.BaseTestCase" {
 			} )
 
 			it( "tasks field is an array of string task names", function() {
-				var result = tool.get_schedulers()
+				var result = tool.scheduler_get_all()
 				result.each( ( scheduler ) => {
 					expect( scheduler.tasks ).toBeArray()
 					scheduler.tasks.each( ( taskName ) => {
@@ -51,18 +51,18 @@ class extends="coldbox.system.testing.BaseTestCase" {
 				} )
 			} )
 
-			// --- get_scheduler ---
+			// --- scheduler_get ---
 			it( "returns an error string for a non-existent scheduler", function() {
-				var result = tool.get_scheduler( "__nonExistentScheduler__" )
+				var result = tool.scheduler_get( "__nonExistentScheduler__" )
 				expect( result ).toBeString()
 				expect( result ).toInclude( "No scheduler found" )
 			} )
 
 			it( "can get details for an existing scheduler", function() {
-				var schedulers = tool.get_schedulers()
+				var schedulers = tool.scheduler_get_all()
 				if ( schedulers.len() > 0 ) {
 					var schedulerName = schedulers[ 1 ].name
-					var result        = tool.get_scheduler( schedulerName )
+					var result        = tool.scheduler_get( schedulerName )
 					expect( result ).toBeStruct()
 					expect( result ).toHaveKey( "name" )
 					expect( result ).toHaveKey( "started" )
@@ -72,93 +72,93 @@ class extends="coldbox.system.testing.BaseTestCase" {
 				}
 			} )
 
-			// --- get_task_stats ---
+			// --- scheduler_get_task_stats ---
 			it( "returns an error string for a non-existent task stats lookup", function() {
-				var schedulers = tool.get_schedulers()
+				var schedulers = tool.scheduler_get_all()
 				if ( schedulers.len() > 0 ) {
-					var result = tool.get_task_stats( schedulers[ 1 ].name, "__nonExistentTask__" )
+					var result = tool.scheduler_get_task_stats( schedulers[ 1 ].name, "__nonExistentTask__" )
 					expect( result ).toBeString()
 					expect( result ).toInclude( "No task found" )
 				}
 			} )
 
 			it( "can get stats for an existing task", function() {
-				var schedulers = tool.get_schedulers()
+				var schedulers = tool.scheduler_get_all()
 				var found      = false
 				schedulers.each( ( s ) => {
 					if ( !found && s.tasks.len() > 0 ) {
-						var result = tool.get_task_stats( s.name, s.tasks[ 1 ] )
+						var result = tool.scheduler_get_task_stats( s.name, s.tasks[ 1 ] )
 						expect( result ).toBeStruct()
 						found = true
 					}
 				} )
 			} )
 
-			// --- run_task ---
+			// --- scheduler_run_task ---
 			it( "returns an error string when running a non-existent task", function() {
-				var schedulers = tool.get_schedulers()
+				var schedulers = tool.scheduler_get_all()
 				if ( schedulers.len() > 0 ) {
-					var result = tool.run_task( schedulers[ 1 ].name, "__nonExistentTask__" )
+					var result = tool.scheduler_run_task( schedulers[ 1 ].name, "__nonExistentTask__" )
 					expect( result ).toBeString()
 					expect( result ).toInclude( "No task found" )
 				}
 			} )
 
-			// --- pause_task ---
+			// --- scheduler_pause_task ---
 			it( "returns an error string when pausing with a non-existent scheduler", function() {
-				var result = tool.pause_task( "__nonExistentScheduler__", "anyTask" )
+				var result = tool.scheduler_pause_task( "__nonExistentScheduler__", "anyTask" )
 				expect( result ).toBeString()
 				expect( result ).toInclude( "No scheduler found" )
 			} )
 
 			it( "returns an error string when pausing a non-existent task", function() {
-				var schedulers = tool.get_schedulers()
+				var schedulers = tool.scheduler_get_all()
 				if ( schedulers.len() > 0 ) {
-					var result = tool.pause_task( schedulers[ 1 ].name, "__nonExistentTask__" )
+					var result = tool.scheduler_pause_task( schedulers[ 1 ].name, "__nonExistentTask__" )
 					expect( result ).toBeString()
 					expect( result ).toInclude( "No task found" )
 				}
 			} )
 
 			it( "can pause an existing task", function() {
-				var schedulers = tool.get_schedulers()
+				var schedulers = tool.scheduler_get_all()
 				var found      = false
 				schedulers.each( ( s ) => {
 					if ( !found && s.tasks.len() > 0 ) {
-						var result = tool.pause_task( s.name, s.tasks[ 1 ] )
+						var result = tool.scheduler_pause_task( s.name, s.tasks[ 1 ] )
 						expect( result ).toBeString()
 						expect( result ).toInclude( "paused" )
 						// cleanup: resume so we don't leave the task disabled
-						tool.resume_task( s.name, s.tasks[ 1 ] )
+						tool.scheduler_resume_task( s.name, s.tasks[ 1 ] )
 						found = true
 					}
 				} )
 			} )
 
-			// --- resume_task ---
+			// --- scheduler_resume_task ---
 			it( "returns an error string when resuming with a non-existent scheduler", function() {
-				var result = tool.resume_task( "__nonExistentScheduler__", "anyTask" )
+				var result = tool.scheduler_resume_task( "__nonExistentScheduler__", "anyTask" )
 				expect( result ).toBeString()
 				expect( result ).toInclude( "No scheduler found" )
 			} )
 
 			it( "returns an error string when resuming a non-existent task", function() {
-				var schedulers = tool.get_schedulers()
+				var schedulers = tool.scheduler_get_all()
 				if ( schedulers.len() > 0 ) {
-					var result = tool.resume_task( schedulers[ 1 ].name, "__nonExistentTask__" )
+					var result = tool.scheduler_resume_task( schedulers[ 1 ].name, "__nonExistentTask__" )
 					expect( result ).toBeString()
 					expect( result ).toInclude( "No task found" )
 				}
 			} )
 
 			it( "can pause and then resume an existing task", function() {
-				var schedulers = tool.get_schedulers()
+				var schedulers = tool.scheduler_get_all()
 				var found      = false
 				schedulers.each( ( s ) => {
 					if ( !found && s.tasks.len() > 0 ) {
 						var taskName  = s.tasks[ 1 ]
-						tool.pause_task( s.name, taskName )
-						var result = tool.resume_task( s.name, taskName )
+						tool.scheduler_pause_task( s.name, taskName )
+						var result = tool.scheduler_resume_task( s.name, taskName )
 						expect( result ).toBeString()
 						expect( result ).toInclude( "resumed" )
 						found = true

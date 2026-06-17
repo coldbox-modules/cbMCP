@@ -21,12 +21,12 @@ class extends="coldbox.system.testing.BaseTestCase" {
 			} )
 
 			it( "can get all WireBox mappings as JSON", function() {
-				var result = tool.get_wirebox_mappings()
+				var result = tool.wirebox_get_mappings()
 				expect( result ).toBeArray()
 			} )
 
 			it( "returns mapping entries with expected keys", function() {
-				var result = tool.get_wirebox_mappings()
+				var result = tool.wirebox_get_mappings()
 				expect( result.len() ).toBeGT( 0 )
 				var first = result[ 1 ]
 				expect( first ).toHaveKey( "name" )
@@ -36,24 +36,24 @@ class extends="coldbox.system.testing.BaseTestCase" {
 				expect( first ).toHaveKey( "autowire" )
 			} )
 
-			// --- has_mapping ---
+			// --- wirebox_has_mapping ---
 			it( "returns true for a known mapping", function() {
-				var mappings = tool.get_wirebox_mappings()
-				var result   = tool.has_mapping( mappings[ 1 ].name )
+				var mappings = tool.wirebox_get_mappings()
+				var result   = tool.wirebox_has_mapping( mappings[ 1 ].name )
 				expect( result ).toBeBoolean()
 				expect( result ).toBeTrue()
 			} )
 
 			it( "returns false for a non-existent mapping", function() {
-				var result = tool.has_mapping( "__NonExistentMapping__XYZ__" )
+				var result = tool.wirebox_has_mapping( "__NonExistentMapping__XYZ__" )
 				expect( result ).toBeBoolean()
 				expect( result ).toBeFalse()
 			} )
 
-			// --- get_mapping ---
+			// --- wirebox_get_mapping ---
 			it( "can get details for a specific mapping by name", function() {
-				var mappings = tool.get_wirebox_mappings()
-				var result   = tool.get_mapping( mappings[ 1 ].name )
+				var mappings = tool.wirebox_get_mappings()
+				var result   = tool.wirebox_get_mapping( mappings[ 1 ].name )
 				expect( result ).toBeStruct()
 				expect( result ).toHaveKey( "name" )
 				expect( result ).toHaveKey( "path" )
@@ -63,7 +63,7 @@ class extends="coldbox.system.testing.BaseTestCase" {
 			} )
 
 			it( "returns an error string for a non-existent mapping", function() {
-				var result = tool.get_mapping( "__NonExistentMapping__XYZ__" )
+				var result = tool.wirebox_get_mapping( "__NonExistentMapping__XYZ__" )
 				expect( result ).toBeString()
 				expect( result ).toInclude( "No WireBox mapping found" )
 			} )

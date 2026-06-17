@@ -20,9 +20,9 @@ class extends="coldbox.system.testing.BaseTestCase" {
 				variables.tool = getInstance( "HandlerTools@cbMCP" )
 			} )
 
-			// --- get_handlers ---
+			// --- handler_get_all ---
 			it( "returns a struct with core and modules keys", function() {
-				var result = tool.get_handlers()
+				var result = tool.handler_get_all()
 				expect( result ).toBeStruct()
 				expect( result ).toHaveKey( "core" )
 				expect( result ).toHaveKey( "modules" )
@@ -31,7 +31,7 @@ class extends="coldbox.system.testing.BaseTestCase" {
 			} )
 
 			it( "core handlers have expected keys", function() {
-				var result = tool.get_handlers()
+				var result = tool.handler_get_all()
 				expect( result.core.len() ).toBeGT( 0 )
 				var success = result.core.filter( ( h ) => !h.keyExists( "error" ) )
 				expect( success.len() ).toBeGT( 0 )
@@ -42,7 +42,7 @@ class extends="coldbox.system.testing.BaseTestCase" {
 			} )
 
 			it( "module handlers are arrays of handler entries", function() {
-				var result = tool.get_handlers()
+				var result = tool.handler_get_all()
 				result.modules.each( ( moduleName, handlers ) => {
 					expect( handlers ).toBeArray()
 					var success = handlers.filter( ( h ) => !h.keyExists( "error" ) )
@@ -54,12 +54,12 @@ class extends="coldbox.system.testing.BaseTestCase" {
 				} )
 			} )
 
-			// --- get_handler ---
+			// --- handler_get ---
 			it( "can get metadata for a specific core handler by name", function() {
-				var handlers = tool.get_handlers()
+				var handlers = tool.handler_get_all()
 				var success  = handlers.core.filter( ( h ) => !h.keyExists( "error" ) )
 				expect( success.len() ).toBeGT( 0 )
-				var result = tool.get_handler( success[ 1 ].handler )
+				var result = tool.handler_get( success[ 1 ].handler )
 				expect( result ).toBeStruct()
 				expect( result ).toHaveKey( "handler" )
 				expect( result ).toHaveKey( "invocationPath" )
@@ -68,12 +68,12 @@ class extends="coldbox.system.testing.BaseTestCase" {
 			} )
 
 			it( "can get metadata for a specific module handler by name", function() {
-				var handlers = tool.get_handlers()
+				var handlers = tool.handler_get_all()
 				var found    = false
 				handlers.modules.each( ( moduleName, moduleHandlers ) => {
 					var success = moduleHandlers.filter( ( h ) => !h.keyExists( "error" ) )
 					if ( !found && success.len() > 0 ) {
-						var result = tool.get_handler( success[ 1 ].handler, moduleName )
+						var result = tool.handler_get( success[ 1 ].handler, moduleName )
 						expect( result ).toBeStruct()
 						expect( result ).toHaveKey( "handler" )
 						expect( result ).toHaveKey( "invocationPath" )
@@ -85,13 +85,13 @@ class extends="coldbox.system.testing.BaseTestCase" {
 			} )
 
 			it( "returns an error struct for a non-existent handler", function() {
-				var result = tool.get_handler( "__NonExistentHandler__" )
+				var result = tool.handler_get( "__NonExistentHandler__" )
 				expect( result ).toBeStruct()
 				expect( result ).toHaveKey( "error" )
 			} )
 
 			it( "returns an error struct for a non-existent module", function() {
-				var result = tool.get_handler( "Main", "__NonExistentModule__" )
+				var result = tool.handler_get( "Main", "__NonExistentModule__" )
 				expect( result ).toBeStruct()
 				expect( result ).toHaveKey( "error" )
 			} )

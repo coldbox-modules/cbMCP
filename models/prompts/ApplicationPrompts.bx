@@ -13,7 +13,7 @@ class extends="BasePrompt" {
 				var ctrl    = application.cbController
 				var appName = ctrl.getSetting( "appName" )
 				var modules = ctrl.getSetting( "modules" ).keyArray().sort( "text", "asc" )
-				return "Provide a comprehensive overview of this ColdBox application. Here is what I know so far:\nApp Name  : #appName#\nModules   : #modules.toList()#\n\nUse the available MCP tools (get_coldbox_settings, get_application_structure, get_router_settings, get_interceptors, etc.) to gather additional details, then summarise the architecture, key modules, routing strategy, and any notable configuration."
+				return "Provide a comprehensive overview of this ColdBox application. Here is what I know so far:\nApp Name  : #appName#\nModules   : #modules.toList()#\n\nUse the available MCP tools (system_get_coldbox_settings, system_get_application_structure, routing_get_settings, interceptor_get_all, etc.) to gather additional details, then summarise the architecture, key modules, routing strategy, and any notable configuration."
 			}
 		)
 	}

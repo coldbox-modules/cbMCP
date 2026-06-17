@@ -10,7 +10,7 @@ class extends="BasePrompt" {
 			name        : "interceptor_audit",
 			description : "Audits all registered ColdBox interceptors and their interception points",
 			handler     : function( struct args = {} ) {
-				return "Audit the ColdBox interceptors for this application. Use the get_interceptors MCP tool to list all registered interceptors and their interception points. Identify interceptors listening on the same points that might conflict, flag any with unusual names or patterns, and suggest ordering improvements where applicable."
+				return "Audit the ColdBox interceptors for this application. Use the interceptor_get_all MCP tool to list all registered interceptors and their interception points. Identify interceptors listening on the same points that might conflict, flag any with unusual names or patterns, and suggest ordering improvements where applicable."
 			}
 		)
 	}

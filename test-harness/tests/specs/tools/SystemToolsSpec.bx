@@ -21,7 +21,7 @@ class extends="coldbox.system.testing.BaseTestCase" {
 			} )
 
 			it( "can get the current server time in ISO 8601 format", function() {
-				var result = tool.time_now()
+				var result = tool.system_get_time()
 				expect( result ).toBeString()
 				expect( result ).notToBeEmpty()
 				// Should parse as a valid date
@@ -29,13 +29,13 @@ class extends="coldbox.system.testing.BaseTestCase" {
 			} )
 
 			it( "can get ColdBox framework settings as JSON", function() {
-				var result = tool.get_coldbox_settings()
+				var result = tool.system_get_coldbox_settings()
 				expect( result ).toBeStruct()
 				expect( result ).notToBeEmpty()
 			} )
 
 			it( "can get runtime environment info as JSON", function() {
-				var result = tool.get_runtime_info()
+				var result = tool.system_get_runtime_info()
 				expect( result ).toBeStruct()
 				expect( result ).toHaveKey( "engine" )
 				expect( result ).toHaveKey( "version" )
@@ -44,26 +44,26 @@ class extends="coldbox.system.testing.BaseTestCase" {
 			} )
 
 			it( "can get application structure as JSON", function() {
-				var result = tool.get_application_structure()
+				var result = tool.system_get_application_structure()
 				expect( result ).toBeStruct()
 				expect( result ).toHaveKey( "layout" )
 				expect( result ).toHaveKey( "app" )
 			} )
 
-			// --- get_setting ---
+			// --- system_get_setting ---
 			it( "can get a specific ColdBox setting by key", function() {
-				var result = tool.get_setting( "appName" )
+				var result = tool.system_get_setting( "appName" )
 				expect( result ).notToBeEmpty()
 			} )
 
 			it( "returns an error string for a non-existent setting", function() {
-				var result = tool.get_setting( "__nonExistentSetting__XYZ__" )
+				var result = tool.system_get_setting( "__nonExistentSetting__XYZ__" )
 				expect( result ).toBeString()
 				expect( result ).toInclude( "No ColdBox setting found" )
 			} )
 
-			it( "get_setting result matches get_coldbox_settings value", function() {
-				var appName  = tool.get_setting( "appName" )
+			it( "system_get_setting result matches system_get_coldbox_settings value", function() {
+				var appName  = tool.system_get_setting( "appName" )
 				expect( appName ).notTobeEmpty()
 			} )
 

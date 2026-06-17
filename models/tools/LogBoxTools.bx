@@ -9,9 +9,9 @@ class {
 	/**
 	 * Get LogBox general info: version, ID, registered logger names, and registered appender names.
 	 */
-	@AITool
 	@mcpTool
-	function get_logbox_info() {
+	@AITool
+	function logbox_get_info() {
 		var logBox = application.cbController.getLogBox()
 		return {
 			"version"   : logBox.getVersion(),
@@ -24,9 +24,9 @@ class {
 	/**
 	 * Get all registered loggers with their category, min/max log levels, and registered appender names.
 	 */
-	@AITool
 	@mcpTool
-	function get_loggers() {
+	@AITool
+	function logbox_get_loggers() {
 		var logBox    = application.cbController.getLogBox()
 		var registry  = logBox.getLoggerRegistry()
 		var result    = []
@@ -57,9 +57,9 @@ class {
 	 *
 	 * @category The logger category name (e.g. "ROOT" or a dotted class path)
 	 */
-	@AITool
 	@mcpTool
-	function get_logger( required string category ) {
+	@AITool
+	function logbox_get_logger( required string category ) {
 		var logBox   = application.cbController.getLogBox()
 		var registry = logBox.getLoggerRegistry()
 
@@ -88,9 +88,9 @@ class {
 	/**
 	 * Get all registered appenders with their name, class, min/max log levels, and initialization status.
 	 */
-	@AITool
 	@mcpTool
-	function get_appenders() {
+	@AITool
+	function logbox_get_appenders() {
 		var logBox   = application.cbController.getLogBox()
 		var registry = logBox.getAppenderRegistry()
 		var result   = []
@@ -111,9 +111,9 @@ class {
 	/**
 	 * Get the root logger details.
 	 */
-	@AITool
 	@mcpTool
-	function get_root_logger() {
+	@AITool
+	function logbox_get_root_logger() {
 		var logger        = application.cbController.getLogBox().getRootLogger()
 		var appenderNames = logger.hasAppenders()
 			? logger.getAppenders().keyArray().sort( "textnocase" )
@@ -139,9 +139,9 @@ class {
 	 * @appenderName Optional name of a specific appender to read from. Reads all file-based appenders if omitted.
 	 * @limit        Maximum number of log entries to return per appender (default 100).
 	 */
-	@AITool
 	@mcpTool
-	function read_log_entries( string appenderName = "", numeric limit = 100 ) {
+	@AITool
+	function logbox_read_entries( string appenderName = "", numeric limit = 100 ) {
 		var logBox      = application.cbController.getLogBox()
 		var registry    = logBox.getAppenderRegistry()
 		var results     = []
@@ -209,9 +209,9 @@ class {
 	 *
 	 * @appenderName Optional name of a specific appender to search. Searches all file-based appenders if omitted.
 	 */
-	@AITool
 	@mcpTool
-	function get_last_error( string appenderName = "" ) {
+	@AITool
+	function logbox_get_last_error( string appenderName = "" ) {
 		var logBox      = application.cbController.getLogBox()
 		var registry    = logBox.getAppenderRegistry()
 		var results     = []

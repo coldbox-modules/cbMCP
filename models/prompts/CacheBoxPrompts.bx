@@ -10,7 +10,7 @@ class extends="BasePrompt" {
 			name        : "cache_health_report",
 			description : "Produces a CacheBox health report for all cache providers",
 			handler     : function( struct args = {} ) {
-				return "Generate a CacheBox health report for this ColdBox application. Use the get_caches and get_cache_stats MCP tools to collect data on each cache provider, then summarise hit rates, eviction counts, object counts, and identify any providers showing signs of memory pressure or degraded performance."
+				return "Generate a CacheBox health report for this ColdBox application. Use the cachebox_get_all and cachebox_get_stats MCP tools to collect data on each cache provider, then summarise hit rates, eviction counts, object counts, and identify any providers showing signs of memory pressure or degraded performance."
 			}
 		)
 	}

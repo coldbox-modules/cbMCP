@@ -21,12 +21,12 @@ class extends="coldbox.system.testing.BaseTestCase" {
 			} )
 
 			it( "can get the registered module registry as JSON", function() {
-				var result = tool.get_modules()
+				var result = tool.module_get_all()
 				expect( result ).toBeArray()
 			} )
 
 			it( "returns module entries with expected keys", function() {
-				var result = tool.get_modules()
+				var result = tool.module_get_all()
 				expect( result.len() ).toBeGT( 0 )
 				var first = result[ 1 ]
 				expect( first ).toHaveKey( "name" )
@@ -35,25 +35,25 @@ class extends="coldbox.system.testing.BaseTestCase" {
 			} )
 
 			it( "includes the cbMCP module in the registry", function() {
-				var result  = tool.get_modules()
+				var result  = tool.module_get_all()
 				var names   = result.map( ( m ) => m.name )
 				expect( names ).toInclude( "cbMCP" )
 			} )
 
 			it( "can get loaded module names as JSON", function() {
-				var result = tool.get_loaded_modules()
+				var result = tool.module_get_names()
 				expect( result ).toBeArray()
 				expect( result.len() ).toBeGT( 0 )
 			} )
 
 			it( "loaded modules list includes cbMCP", function() {
-				var result = tool.get_loaded_modules()
+				var result = tool.module_get_names()
 				expect( result ).toInclude( "cbMCP" )
 			} )
 
-			// --- get_module ---
+			// --- module_get ---
 			it( "can get details for a specific module by name", function() {
-				var result = tool.get_module( "cbMCP" )
+				var result = tool.module_get( "cbMCP" )
 				expect( result ).toBeStruct()
 				expect( result ).toHaveKey( "name" )
 				expect( result ).toHaveKey( "activated" )
@@ -66,7 +66,7 @@ class extends="coldbox.system.testing.BaseTestCase" {
 			} )
 
 			it( "returns an error string for a non-existent module", function() {
-				var result = tool.get_module( "__NonExistentModule__XYZ__" )
+				var result = tool.module_get( "__NonExistentModule__XYZ__" )
 				expect( result ).toBeString()
 				expect( result ).toInclude( "No module found" )
 			} )

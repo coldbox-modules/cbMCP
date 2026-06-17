@@ -14,9 +14,9 @@ class {
 	 * - core    : array of core application handlers
 	 * - modules : struct keyed by module name, each value an array of that module's handlers
 	 */
-	@AITool
 	@mcpTool
-	function get_handlers() {
+	@AITool
+	function handler_get_all() {
 		var controller = application.cbController
 
 		// Core handlers
@@ -48,9 +48,9 @@ class {
 	 * @handlerName The handler name as registered (e.g. "Main", "api/Users")
 	 * @moduleName  Optional module name to look up a module handler instead of a core handler
 	 */
-	@AITool
 	@mcpTool
-	function get_handler( required string handlerName, string moduleName = "" ) {
+	@AITool
+	function handler_get( required string handlerName, string moduleName = "" ) {
 		var controller = application.cbController
 		var invocationPath = len( arguments.moduleName )
 			? ( controller.getSetting( "modules" )[ arguments.moduleName ]?.handlerInvocationPath ?: "" )

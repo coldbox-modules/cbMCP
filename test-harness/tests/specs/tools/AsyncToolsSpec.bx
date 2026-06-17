@@ -21,13 +21,13 @@ class extends="coldbox.system.testing.BaseTestCase" {
 			} )
 
 			it( "can get all async executors as a struct", function() {
-				var result = tool.get_executors()
+				var result = tool.async_get_all()
 				expect( result ).toBeStruct()
 				expect( result.len() ).toBeGT( 0 )
 			} )
 
 			it( "returns executor entries with expected keys", function() {
-				var result   = tool.get_executors()
+				var result   = tool.async_get_all()
 				var firstKey = result.keyArray()[ 1 ]
 				var first    = result[ firstKey ]
 				expect( first ).toHaveKey( "type" )
@@ -41,7 +41,7 @@ class extends="coldbox.system.testing.BaseTestCase" {
 			} )
 
 			it( "all executors report a shutdown and terminated status", function() {
-				var result = tool.get_executors()
+				var result = tool.async_get_all()
 				result.each( ( name, executor ) => {
 					expect( executor.isShutdown ).toBeBoolean()
 					expect( executor.isTerminated ).toBeBoolean()
@@ -49,15 +49,15 @@ class extends="coldbox.system.testing.BaseTestCase" {
 			} )
 
 			it( "can get all async executor names", function() {
-				var result = tool.get_executor_names()
+				var result = tool.async_get_names()
 				expect( result ).toBeArray()
 				expect( result.len() ).toBeGT( 0 )
 				expect( result[ 1 ] ).toBeString()
 			} )
 
-			it( "executor names match the keys from get_executors", function() {
-				var names    = tool.get_executor_names()
-				var statuses = tool.get_executors()
+			it( "executor names match the keys from async_get_all", function() {
+				var names    = tool.async_get_names()
+				var statuses = tool.async_get_all()
 				names.each( ( name ) => {
 					expect( statuses ).toHaveKey( name )
 				} )

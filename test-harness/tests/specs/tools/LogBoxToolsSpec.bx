@@ -20,9 +20,9 @@ class extends="coldbox.system.testing.BaseTestCase" {
 				variables.tool = getInstance( "LogBoxTools@cbMCP" )
 			} )
 
-			// --- get_logbox_info ---
+			// --- logbox_get_info ---
 			it( "can get logbox general info", function() {
-				var result = tool.get_logbox_info()
+				var result = tool.logbox_get_info()
 				expect( result ).toBeStruct()
 				expect( result ).toHaveKey( "version" )
 				expect( result ).toHaveKey( "logBoxID" )
@@ -33,7 +33,7 @@ class extends="coldbox.system.testing.BaseTestCase" {
 			} )
 
 			it( "loggers and appenders fields are sorted arrays of strings", function() {
-				var result = tool.get_logbox_info()
+				var result = tool.logbox_get_info()
 				expect( result.loggers ).toBeArray()
 				expect( result.appenders ).toBeArray()
 				expect( result.loggers.len() ).toBeGT( 0 )
@@ -42,15 +42,15 @@ class extends="coldbox.system.testing.BaseTestCase" {
 				} )
 			} )
 
-			// --- get_loggers ---
+			// --- logbox_get_loggers ---
 			it( "can get all registered loggers", function() {
-				var result = tool.get_loggers()
+				var result = tool.logbox_get_loggers()
 				expect( result ).toBeArray()
 				expect( result.len() ).toBeGT( 0 )
 			} )
 
 			it( "logger entries have expected keys", function() {
-				var result = tool.get_loggers()
+				var result = tool.logbox_get_loggers()
 				var first  = result[ 1 ]
 				expect( first ).toHaveKey( "category" )
 				expect( first ).toHaveKey( "levelMin" )
@@ -65,9 +65,9 @@ class extends="coldbox.system.testing.BaseTestCase" {
 				expect( first.appenders ).toBeArray()
 			} )
 
-			// --- get_logger ---
+			// --- logbox_get_logger ---
 			it( "can get details for the ROOT logger by category name", function() {
-				var result = tool.get_logger( "ROOT" )
+				var result = tool.logbox_get_logger( "ROOT" )
 				expect( result ).toBeStruct()
 				expect( result ).toHaveKey( "category" )
 				expect( result ).toHaveKey( "levelMin" )
@@ -77,20 +77,20 @@ class extends="coldbox.system.testing.BaseTestCase" {
 			} )
 
 			it( "returns an error string for a non-existent logger category", function() {
-				var result = tool.get_logger( "__nonExistentCategory__XYZ__" )
+				var result = tool.logbox_get_logger( "__nonExistentCategory__XYZ__" )
 				expect( result ).toBeString()
 				expect( result ).toInclude( "No logger found" )
 			} )
 
-			// --- get_appenders ---
+			// --- logbox_get_appenders ---
 			it( "can get all registered appenders", function() {
-				var result = tool.get_appenders()
+				var result = tool.logbox_get_appenders()
 				expect( result ).toBeArray()
 				expect( result.len() ).toBeGT( 0 )
 			} )
 
 			it( "appender entries have expected keys", function() {
-				var result = tool.get_appenders()
+				var result = tool.logbox_get_appenders()
 				var first  = result[ 1 ]
 				expect( first ).toHaveKey( "name" )
 				expect( first ).toHaveKey( "class" )
@@ -103,15 +103,15 @@ class extends="coldbox.system.testing.BaseTestCase" {
 			} )
 
 			it( "appender names match logbox info appender list", function() {
-				var info          = tool.get_logbox_info()
-				var appenders     = tool.get_appenders()
+				var info          = tool.logbox_get_info()
+				var appenders     = tool.logbox_get_appenders()
 				var appenderNames = appenders.map( ( a ) => a.name ).sort( "textnocase" )
 				expect( appenderNames ).toBe( info.appenders )
 			} )
 
-			// --- get_root_logger ---
+			// --- logbox_get_root_logger ---
 			it( "can get the root logger", function() {
-				var result = tool.get_root_logger()
+				var result = tool.logbox_get_root_logger()
 				expect( result ).toBeStruct()
 				expect( result ).toHaveKey( "category" )
 				expect( result ).toHaveKey( "levelMin" )
@@ -121,27 +121,27 @@ class extends="coldbox.system.testing.BaseTestCase" {
 				expect( result.category ).toBe( "ROOT" )
 			} )
 
-			it( "root logger matches get_logger( ROOT ) result", function() {
-				var fromRoot   = tool.get_root_logger()
-				var fromLookup = tool.get_logger( "ROOT" )
+			it( "root logger matches logbox_get_logger( ROOT ) result", function() {
+				var fromRoot   = tool.logbox_get_root_logger()
+				var fromLookup = tool.logbox_get_logger( "ROOT" )
 				expect( fromRoot.levelMin ).toBe( fromLookup.levelMin )
 				expect( fromRoot.levelMax ).toBe( fromLookup.levelMax )
 				expect( fromRoot.appenders ).toBe( fromLookup.appenders )
 			} )
 
-			// --- read_log_entries ---
+			// --- logbox_read_entries ---
 			it( "can read log entries from all file-based appenders", function() {
 				// Write something to the log so there is at least one entry
-				application.cbController.getLogBox().getRootLogger().info( "cbMCP test: read_log_entries probe" )
+				application.cbController.getLogBox().getRootLogger().info( "cbMCP test: logbox_read_entries probe" )
 				// Give the async queue a moment to flush
 				sleep( 300 )
-				var result = tool.read_log_entries()
+				var result = tool.logbox_read_entries()
 				expect( result ).toBeArray()
 				expect( result.len() ).toBeGT( 0 )
 			} )
 
-			it( "read_log_entries result items have expected keys", function() {
-				var result = tool.read_log_entries()
+			it( "logbox_read_entries result items have expected keys", function() {
+				var result = tool.logbox_read_entries()
 				expect( result ).toBeArray()
 				var first = result[ 1 ]
 				expect( first ).toHaveKey( "appenderName" )
@@ -152,10 +152,10 @@ class extends="coldbox.system.testing.BaseTestCase" {
 				expect( first.entries ).toBeArray()
 			} )
 
-			it( "read_log_entries entries have expected log line keys", function() {
+			it( "logbox_read_entries entries have expected log line keys", function() {
 				application.cbController.getLogBox().getRootLogger().warn( "cbMCP test: entry key probe" )
 				sleep( 300 )
-				var result = tool.read_log_entries()
+				var result = tool.logbox_read_entries()
 				var entries = result[ 1 ].entries
 				expect( entries.len() ).toBeGT( 0 )
 				var entry = entries[ entries.len() ]
@@ -169,37 +169,37 @@ class extends="coldbox.system.testing.BaseTestCase" {
 				expect( entry.severity ).notToBeEmpty()
 			} )
 
-			it( "read_log_entries respects the limit parameter", function() {
-				var result  = tool.read_log_entries( limit = 2 )
+			it( "logbox_read_entries respects the limit parameter", function() {
+				var result  = tool.logbox_read_entries( limit = 2 )
 				var entries = result[ 1 ].entries
 				expect( entries.len() ).toBeLTE( 2 )
 			} )
 
-			it( "read_log_entries returns error string for unknown appender name", function() {
-				var result = tool.read_log_entries( appenderName = "__nonExistentAppender__XYZ__" )
+			it( "logbox_read_entries returns error string for unknown appender name", function() {
+				var result = tool.logbox_read_entries( appenderName = "__nonExistentAppender__XYZ__" )
 				expect( result ).toBeString()
 				expect( result ).toInclude( "No file-based appender found" )
 			} )
 
-			it( "read_log_entries skips non-file appenders (myConsole)", function() {
+			it( "logbox_read_entries skips non-file appenders (myConsole)", function() {
 				// myConsole is a ConsoleAppender — should not appear in results
-				var result = tool.read_log_entries()
+				var result = tool.logbox_read_entries()
 				expect( result ).toBeArray()
 				var names = result.map( ( r ) => r.appenderName )
 				expect( names ).notToInclude( "myConsole" )
 			} )
 
-			// --- get_last_error ---
+			// --- logbox_get_last_error ---
 			it( "can get the last error from file-based appenders", function() {
 				application.cbController.getLogBox().getRootLogger().error( "cbMCP test: last error probe" )
 				sleep( 300 )
-				var result = tool.get_last_error()
+				var result = tool.logbox_get_last_error()
 				expect( result ).toBeArray()
 				expect( result.len() ).toBeGT( 0 )
 			} )
 
-			it( "get_last_error result items have expected keys", function() {
-				var result = tool.get_last_error()
+			it( "logbox_get_last_error result items have expected keys", function() {
+				var result = tool.logbox_get_last_error()
 				var first  = result[ 1 ]
 				expect( first ).toHaveKey( "appenderName" )
 				expect( first ).toHaveKey( "logFile" )
@@ -207,27 +207,27 @@ class extends="coldbox.system.testing.BaseTestCase" {
 				expect( first ).toHaveKey( "note" )
 			} )
 
-			it( "get_last_error returns an ERROR or FATAL entry after logging one", function() {
+			it( "logbox_get_last_error returns an ERROR or FATAL entry after logging one", function() {
 				application.cbController.getLogBox().getRootLogger().error( "cbMCP test: verifiable error entry" )
 				sleep( 300 )
-				var result = tool.get_last_error()
+				var result = tool.logbox_get_last_error()
 				var entry  = result[ 1 ].entry
 				expect( entry ).toBeStruct()
 				expect( entry ).toHaveKey( "severity" )
 				expect( entry.severity ).toBeIn( [ "ERROR", "FATAL" ] )
 			} )
 
-			it( "get_last_error entry message matches logged message", function() {
+			it( "logbox_get_last_error entry message matches logged message", function() {
 				var marker = "cbMCP test marker #createUUID()#"
 				application.cbController.getLogBox().getRootLogger().error( marker )
 				sleep( 300 )
-				var result = tool.get_last_error()
+				var result = tool.logbox_get_last_error()
 				var entry  = result[ 1 ].entry
 				expect( entry.message ).toInclude( marker )
 			} )
 
-			it( "get_last_error returns error string for unknown appender name", function() {
-				var result = tool.get_last_error( appenderName = "__nonExistentAppender__XYZ__" )
+			it( "logbox_get_last_error returns error string for unknown appender name", function() {
+				var result = tool.logbox_get_last_error( appenderName = "__nonExistentAppender__XYZ__" )
 				expect( result ).toBeString()
 				expect( result ).toInclude( "No file-based appender found" )
 			} )

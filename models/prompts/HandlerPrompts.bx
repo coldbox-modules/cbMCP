@@ -14,7 +14,7 @@ class extends="BasePrompt" {
 			],
 			handler     : function( struct args = {} ) {
 				var handlerName = arguments.args.handlerName ?: ""
-				return "Diagnose the ColdBox handler '#handlerName#'. Use the get_handler_metadata and get_registered_handlers MCP tools to gather details, then identify any potential issues with routing, dependency injection, or event execution lifecycle."
+				return "Diagnose the ColdBox handler '#handlerName#'. Use the handler_get and handler_get_all MCP tools to gather details, then identify any potential issues with routing, dependency injection, or event execution lifecycle."
 			}
 		)
 	}

@@ -11,7 +11,7 @@ class {
 	 */
 	@mcpTool
 	@AITool
-	function get_executors() {
+	function async_get_all() {
 		return application.cbController.getAsyncManager().getExecutorStatusMap()
 	}
 
@@ -21,7 +21,7 @@ class {
 	 */
 	@mcpTool
 	@AITool
-	function get_executor_names() {
+	function async_get_names() {
 		return application.cbController.getAsyncManager().getExecutors().keyArray().sort()
 	}
 

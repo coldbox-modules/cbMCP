@@ -10,27 +10,27 @@ class {
 	/**
 	 * Get the server's current date/time in ISO 8601 format.
 	 */
-	@AITool
 	@mcpTool
-	function time_now() {
+	@AITool
+	function system_get_time() {
 		return dateTimeFormat( now(), "iso" )
 	}
 
 	/**
 	 * Get ColdBox framework settings and configuration.
 	 */
-	@AITool
 	@mcpTool
-	function get_coldbox_settings() {
+	@AITool
+	function system_get_coldbox_settings() {
 		return application.cbController.getColdBoxSettings()
 	}
 
 	/**
 	 * Get runtime environment info: engine (boxlang|lucee|adobe), version, app layout (flat|boxlang), and OS.
 	 */
-	@AITool
 	@mcpTool
-	function get_runtime_info() {
+	@AITool
+	function system_get_runtime_info() {
 		// Engine detection
 		var engine  = "adobe"
 		var version = ""
@@ -61,9 +61,9 @@ class {
 	 * Get the application structure including modules, handlers, schedulers, interceptors, and more.
 	 * Adapts automatically to both flat and boxlang app layouts.
 	 */
-	@AITool
 	@mcpTool
-	function get_application_structure() {
+	@AITool
+	function system_get_application_structure() {
 		var controller = application.cbController
 		var appPath    = controller.getSetting( "applicationPath" )
 		var layout     = detectAppLayout( appPath )
@@ -93,9 +93,9 @@ class {
 	 *
 	 * @name The setting key to retrieve (e.g. "appName", "debugMode")
 	 */
-	@AITool
 	@mcpTool
-	function get_setting( required string name ) {
+	@AITool
+	function system_get_setting( required string name ) {
 		var controller = application.cbController
 		if ( !controller.settingExists( arguments.name ) ) {
 			return "No ColdBox setting found with the key: #arguments.name#"
@@ -108,9 +108,9 @@ class {
 	 * services, and removes the controller from application scope so the next request
 	 * rebuilds it from scratch. Equivalent to hitting `?fwreinit=1`.
 	 */
-	@AITool
 	@mcpTool
-	function reinit_app() {
+	@AITool
+	function system_reinit_app() {
 		var appKey = application.cbController.getAppKey()
 
 		lock

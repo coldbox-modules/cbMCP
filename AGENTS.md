@@ -55,21 +55,22 @@ Key capabilities include:
 
 All MCP/AI tool methods across the module must follow consistent naming patterns. The conventions below are **mandatory** for new tools and must be maintained when refactoring existing ones.
 
-### Naming Style
+### Prefix-Based Naming Style
 
-Every tool method uses `<verb>_<noun>` format in `snake_case`, reflecting what the tool does:
+Every tool method uses `<tool-prefix>_<action>_<subject>` format in `snake_case`, reflecting the tool class namespace and what the method does. Prefixes must be unique across tool classes:
 
-| Pattern | Example |
-|---|---|
-| `get_*` | `get_caches()`, `get_schedulers()`, `get_handlers()` |
-| `list_*` | `list_routes()`, `list_module_routes()` |
-| `has_*` | `has_mapping()` |
-| `cache_*` | `cache_key_exists()` |
-| `clear_*` | `clear_all()`, `clear_item()`, `clear_event()` |
-| `time_*` | `time_now()` |
-| `reinit_*` | `reinit_app()` |
-| `read_*` | `read_log_entries()` |
-| `run_*` / `pause_*` / `resume_*` | `run_task()`, `pause_task()`, `resume_task()` |
+| Tool Class | Prefix | Examples |
+|---|---|---|
+| `AsyncTools` | `async_` | `async_get_all()`, `async_get_names()` |
+| `CacheBoxTools` | `cachebox_` | `cachebox_get_all()`, `cachebox_has_key()`, `cachebox_clear_all()` |
+| `HandlerTools` | `handler_` | `handler_get_all()`, `handler_get()` |
+| `InterceptorTools` | `interceptor_` | `interceptor_get_all()`, `interceptor_get_states()` |
+| `LogBoxTools` | `logbox_` | `logbox_get_info()`, `logbox_read_entries()` |
+| `ModuleTools` | `module_` | `module_get_all()`, `module_get_names()`, `module_get()` |
+| `RoutingTools` | `routing_` | `routing_get_all()`, `routing_get_module()` |
+| `SchedulerTools` | `scheduler_` | `scheduler_get_all()`, `scheduler_run_task()` |
+| `SystemTools` | `system_` | `system_get_time()`, `system_reinit_app()` |
+| `WireBoxTools` | `wirebox_` | `wirebox_get_mappings()`, `wirebox_has_mapping()` |
 
 ### Standard Method Patterns
 
@@ -77,10 +78,10 @@ Every tool class **should** implement the following standard methods where appli
 
 | Pattern | Signature | Purpose |
 |---|---|---|
-| `get_<plural>()` | Returns all entities | Holistic view of the subsystem |
-| `get_<names>` | Returns array of names only | Lightweight listing for dropdowns/selectors |
-| `get_<singular>( name )` | Returns a single entity by name | Drill-down into one item |
-| `has_<singular>( name )` | Returns boolean | Existence check |
+| `<prefix>_get_all()` | Returns all entities | Holistic view of the subsystem |
+| `<prefix>_get_names()` | Returns array of names only | Lightweight listing for dropdowns/selectors |
+| `<prefix>_get( name )` | Returns a single entity by name | Drill-down into one item |
+| `<prefix>_has_<singular>( name )` | Returns boolean | Existence check |
 
 Methods prefixed with an underscore (e.g. `_buildHandlerList`, `_resolveTask`) are private helpers and must **not** be annotated with `@mcpTool` or `@AITool`.
 
@@ -91,7 +92,7 @@ Always declare annotations in this order:
 ```boxlang
 @mcpTool
 @AITool
-public struct function get_caches() {
+public struct function cachebox_get_all() {
 ```
 
 `@mcpTool` first, then `@AITool` — consistent across every tool method in every file. Never reverse these.
@@ -101,7 +102,7 @@ public struct function get_caches() {
 - Tool methods **must never throw exceptions**. Always return error structs:
 
   ```boxlang
-  { "error": true, "message": "No scheduler found with the name: myScheduler. Use get_schedulers() to see available schedulers." }
+  { "error": true, "message": "No scheduler found with the name: myScheduler. Use scheduler_get_all() to see available schedulers." }
   ```
 
 - Error messages must include the user's input and guide them toward the corrective action (which tool to call instead).

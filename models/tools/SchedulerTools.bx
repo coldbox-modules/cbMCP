@@ -11,9 +11,9 @@ class {
 	/**
 	 * Get all registered task schedulers with their configurations and scheduled tasks.
 	 */
-	@AITool
 	@mcpTool
-	function get_schedulers() {
+	@AITool
+	function scheduler_get_all() {
 		var result = []
 		getSchedulerMap().each( ( schedulerName, scheduler ) => {
 			result.append( {
@@ -37,9 +37,9 @@ class {
 	 *
 	 * @schedulerName The name of the scheduler to inspect
 	 */
-	@AITool
 	@mcpTool
-	function get_scheduler( required string schedulerName ) {
+	@AITool
+	function scheduler_get( required string schedulerName ) {
 		var schedulers = getSchedulerMap()
 		if ( !schedulers.keyExists( arguments.schedulerName ) ) {
 			return "No scheduler found with the name: #arguments.schedulerName#"
@@ -64,9 +64,9 @@ class {
 	 * @schedulerName The name of the scheduler that owns the task
 	 * @taskName      The name of the task to inspect
 	 */
-	@AITool
 	@mcpTool
-	function get_task_stats( required string schedulerName, required string taskName ) {
+	@AITool
+	function scheduler_get_task_stats( required string schedulerName, required string taskName ) {
 		var lookup = resolveTask( arguments.schedulerName, arguments.taskName )
 		if ( isSimpleValue( lookup ) ) return lookup
 		return lookup.getStats()
@@ -78,9 +78,9 @@ class {
 	 * @schedulerName The name of the scheduler that owns the task
 	 * @taskName      The name of the task to run
 	 */
-	@AITool
 	@mcpTool
-	function run_task( required string schedulerName, required string taskName ) {
+	@AITool
+	function scheduler_run_task( required string schedulerName, required string taskName ) {
 		var lookup = resolveTask( arguments.schedulerName, arguments.taskName )
 		if ( isSimpleValue( lookup ) ) return lookup
 		lookup.run( force = true )
@@ -94,9 +94,9 @@ class {
 	 * @schedulerName The name of the scheduler that owns the task
 	 * @taskName      The name of the task to pause
 	 */
-	@AITool
 	@mcpTool
-	function pause_task( required string schedulerName, required string taskName ) {
+	@AITool
+	function scheduler_pause_task( required string schedulerName, required string taskName ) {
 		var lookup = resolveTask( arguments.schedulerName, arguments.taskName )
 		if ( isSimpleValue( lookup ) ) return lookup
 		lookup.disable()
@@ -109,9 +109,9 @@ class {
 	 * @schedulerName The name of the scheduler that owns the task
 	 * @taskName      The name of the task to resume
 	 */
-	@AITool
 	@mcpTool
-	function resume_task( required string schedulerName, required string taskName ) {
+	@AITool
+	function scheduler_resume_task( required string schedulerName, required string taskName ) {
 		var lookup = resolveTask( arguments.schedulerName, arguments.taskName )
 		if ( isSimpleValue( lookup ) ) return lookup
 		lookup.enable()

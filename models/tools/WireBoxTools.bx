@@ -9,9 +9,9 @@ class {
 	/**
 	 * Get all WireBox dependency injection mappings (models/services registered in the DI container).
 	 */
-	@AITool
 	@mcpTool
-	function get_wirebox_mappings() {
+	@AITool
+	function wirebox_get_mappings() {
 		var binder   = application.cbController.getWireBox().getBinder()
 		var mappings = binder.getMappings()
 		var result   = []
@@ -38,9 +38,9 @@ class {
 	 *
 	 * @name The mapping name to check
 	 */
-	@AITool
 	@mcpTool
-	function has_mapping( required string name ) {
+	@AITool
+	function wirebox_has_mapping( required string name ) {
 		return application.cbController.getWireBox().getBinder().mappingExists( arguments.name )
 	}
 
@@ -49,9 +49,9 @@ class {
 	 *
 	 * @name The mapping name to retrieve
 	 */
-	@AITool
 	@mcpTool
-	function get_mapping( required string name ) {
+	@AITool
+	function wirebox_get_mapping( required string name ) {
 		var binder = application.cbController.getWireBox().getBinder()
 		if ( !binder.mappingExists( arguments.name ) ) {
 			return "No WireBox mapping found with the name: #arguments.name#"

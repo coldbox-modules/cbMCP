@@ -9,9 +9,9 @@ class {
 	/**
 	 * Get all registered modules with their configuration and status (activated, paths, settings, etc.)
 	 */
-	@AITool
 	@mcpTool
-	function get_modules() {
+	@AITool
+	function module_get_all() {
 		var moduleService  = application.cbController.getModuleService()
 		var moduleRegistry = moduleService.getModuleRegistry()
 		var moduleConfigs  = application.cbController.getSetting( "modules" )
@@ -65,9 +65,9 @@ class {
 	/**
 	 * Get a simple array of loaded module names.
 	 */
-	@AITool
 	@mcpTool
-	function get_loaded_modules() {
+	@AITool
+	function module_get_names() {
 		return application.cbController.getModuleService().getLoadedModules()
 	}
 
@@ -76,9 +76,9 @@ class {
 	 *
 	 * @moduleName The name of the module to inspect
 	 */
-	@AITool
 	@mcpTool
-	function get_module( required string moduleName ) {
+	@AITool
+	function module_get( required string moduleName ) {
 		var moduleService = application.cbController.getModuleService()
 		if ( !moduleService.isModuleRegistered( arguments.moduleName ) ) {
 			return "No module found with the name: #arguments.moduleName#"

@@ -1,7 +1,7 @@
 {
 	"servers": {
-		"boxlang-mcp": {
-			"url": "http://127.0.0.1:8181/~bxmcp/boxlang.bxm",
+		"cbMCP": {
+			"url": "http://127.0.0.1:60299/cbmcp",
 			"type": "http"
 		}
 	},

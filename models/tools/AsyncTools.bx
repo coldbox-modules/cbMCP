@@ -11,7 +11,7 @@ class extends="BaseTool"{
 	 */
 	@mcpTool
 	@AITool
-	function async_get_all() {
+	function async_get_executors() {
 		return application.cbController.getAsyncManager().getExecutorStatusMap()
 	}
 
@@ -21,7 +21,7 @@ class extends="BaseTool"{
 	 */
 	@mcpTool
 	@AITool
-	function async_get_names() {
+	function async_get_executor_names() {
 		return application.cbController.getAsyncManager().getExecutors().keyArray().sort()
 	}
 
@@ -37,7 +37,7 @@ class extends="BaseTool"{
 	 */
 	@mcpTool
 	@AITool
-	function async_get_health() {
+	function async_get_executors_health() {
 		var executors = application.cbController.getAsyncManager().getExecutorStatusMap()
 		var report    = _newHealthReport()
 		var total     = executors.len()
@@ -57,17 +57,17 @@ class extends="BaseTool"{
 				case "idle": idle++; break
 				case "degraded":
 					degraded++
-					_addIssue( report, "warning", "EXECUTOR_DEGRADED", "Executor '#name#' is degraded", "Review executor stats using async_get_all()", name, { "status" : status } )
+					_addIssue( report, "warning", "EXECUTOR_DEGRADED", "Executor '#name#' is degraded", "Review executor stats using async_get_executors()", name, { "status" : status } )
 					break
 				case "shutdown":
 					shutdown++
 					critical++
-					_addIssue( report, "critical", "EXECUTOR_SHUTDOWN", "Executor '#name#' is shutdown", "Review executor stats using async_get_all()", name, { "status" : status } )
+					_addIssue( report, "critical", "EXECUTOR_SHUTDOWN", "Executor '#name#' is shutdown", "Review executor stats using async_get_executors()", name, { "status" : status } )
 					break
 				case "terminated":
 					terminated++
 					critical++
-					_addIssue( report, "critical", "EXECUTOR_TERMINATED", "Executor '#name#' is terminated", "Review executor stats using async_get_all()", name, { "status" : status } )
+					_addIssue( report, "critical", "EXECUTOR_TERMINATED", "Executor '#name#' is terminated", "Review executor stats using async_get_executors()", name, { "status" : status } )
 					break
 			}
 		} )

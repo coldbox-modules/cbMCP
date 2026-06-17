@@ -21,13 +21,13 @@ class extends="coldbox.system.testing.BaseTestCase" {
 			} )
 
 			it( "can get all async executors as a struct", function() {
-				var result = tool.async_get_all()
+				var result = tool.async_get_executors()
 				expect( result ).toBeStruct()
 				expect( result.len() ).toBeGT( 0 )
 			} )
 
 			it( "returns executor entries with expected keys", function() {
-				var result   = tool.async_get_all()
+				var result   = tool.async_get_executors()
 				var firstKey = result.keyArray()[ 1 ]
 				var first    = result[ firstKey ]
 				expect( first ).toHaveKey( "type" )
@@ -41,7 +41,7 @@ class extends="coldbox.system.testing.BaseTestCase" {
 			} )
 
 			it( "all executors report a shutdown and terminated status", function() {
-				var result = tool.async_get_all()
+				var result = tool.async_get_executors()
 				result.each( ( name, executor ) => {
 					expect( executor.isShutdown ).toBeBoolean()
 					expect( executor.isTerminated ).toBeBoolean()
@@ -49,22 +49,22 @@ class extends="coldbox.system.testing.BaseTestCase" {
 			} )
 
 			it( "can get all async executor names", function() {
-				var result = tool.async_get_names()
+				var result = tool.async_get_executor_names()
 				expect( result ).toBeArray()
 				expect( result.len() ).toBeGT( 0 )
 				expect( result[ 1 ] ).toBeString()
 			} )
 
-			it( "executor names match the keys from async_get_all", function() {
-				var names    = tool.async_get_names()
-				var statuses = tool.async_get_all()
+			it( "executor names match the keys from async_get_executors", function() {
+				var names    = tool.async_get_executor_names()
+				var statuses = tool.async_get_executors()
 				names.each( ( name ) => {
 					expect( statuses ).toHaveKey( name )
 				} )
 			} )
 
 			it( "can get async executor health", function() {
-				var result = tool.async_get_health()
+				var result = tool.async_get_executors_health()
 				expect( result ).toBeStruct()
 				expect( result ).toHaveKey( "status" )
 				expect( result ).toHaveKey( "score" )
@@ -75,7 +75,7 @@ class extends="coldbox.system.testing.BaseTestCase" {
 			} )
 
 			it( "async health issues are structurally valid", function() {
-				var result = tool.async_get_health()
+				var result = tool.async_get_executors_health()
 				result.issues.each( ( issue ) => {
 					expect( issue ).toHaveKey( "severity" )
 					expect( issue ).toHaveKey( "code" )

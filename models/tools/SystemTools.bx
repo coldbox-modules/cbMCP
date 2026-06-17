@@ -116,7 +116,7 @@ class extends="BaseTool"{
 	function system_get_health() {
 		var subsystems = {}
 
-		subsystems.async     = _safeHealthCall( () => new AsyncTools().async_get_health(), "async" )
+		subsystems.async     = _safeHealthCall( () => new AsyncTools().async_get_executors_health(), "async" )
 		subsystems.cachebox  = _safeHealthCall( () => new CacheBoxTools().cachebox_get_health(), "cachebox" )
 		subsystems.scheduler = _safeHealthCall( () => new SchedulerTools().scheduler_get_health(), "scheduler" )
 		subsystems.logbox    = _safeHealthCall( () => new LogBoxTools().logbox_get_health(), "logbox" )

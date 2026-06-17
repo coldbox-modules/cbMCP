@@ -387,8 +387,8 @@ The server exposes tools across 11 ColdBox domains. Each tool is an `@mcpTool`-a
 
 | Tool | Description |
 |---|---|
-| `async_get_all` | All registered async executors with status, thread pool info, and task statistics |
-| `async_get_names` | Sorted list of registered executor names |
+| `async_get_executors` | All registered async executors with status, thread pool info, and task statistics |
+| `async_get_executor_names` | Sorted list of registered executor names |
 
 ---
 

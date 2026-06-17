@@ -61,7 +61,7 @@ Every tool method uses `<tool-prefix>_<action>_<subject>` format in `snake_case`
 
 | Tool Class | Prefix | Examples |
 |---|---|---|
-| `AsyncTools` | `async_` | `async_get_all()`, `async_get_names()` |
+| `AsyncTools` | `async_` | `async_get_executors()`, `async_get_executor_names()` |
 | `CacheBoxTools` | `cachebox_` | `cachebox_get_all()`, `cachebox_has_key()`, `cachebox_clear_all()` |
 | `HandlerTools` | `handler_` | `handler_get_all()`, `handler_get()` |
 | `InterceptorTools` | `interceptor_` | `interceptor_get_all()`, `interceptor_get_states()` |

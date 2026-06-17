@@ -139,7 +139,7 @@ class extends="BaseTool"{
 		var startedCount  = 0
 
 		schedulers.each( ( key, scheduler ) => {
-			var schedName = scheduler.getSchedulerName()
+			var schedName = scheduler.getName()
 
 			if ( scheduler.hasStarted() ) {
 				startedCount++

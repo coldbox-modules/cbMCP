@@ -278,6 +278,73 @@ class extends="BaseTool"{
 	}
 
 	/**
+	 * Get a health assessment of the LogBox logging infrastructure.
+	 *
+	 * Returns a structured health report with status, score, and logger/appender issues.
+	 *
+	 * Status indicators:
+	 * - healthy  : All appenders are initialized and logger coverage looks normal
+	 * - warning  : One or more appenders are not initialized or a logger has no appenders
+	 * - critical : Not used for LogBox health in this report
+	 */
+	@mcpTool
+	@AITool
+	function logbox_get_health() {
+		var logBox          = application.cbController.getLogBox()
+		var report          = _newHealthReport()
+		var loggerRegistry   = logBox.getLoggerRegistry()
+		var appenderRegistry = logBox.getAppenderRegistry()
+		var totalLoggers     = loggerRegistry.len()
+		var totalAppenders   = appenderRegistry.len()
+		var initialized      = 0
+		var uninitialized    = 0
+		var fileAppenders    = 0
+		var recentErrors     = 0
+
+		appenderRegistry.each( ( name, appender ) => {
+			if ( appender.isInitialized() ) {
+				initialized++
+			} else {
+				uninitialized++
+				_addIssue( report, "warning", "LOGBOX_APPENDER_NOT_INITIALIZED", "Appender '#name#' is not initialized", "Verify appender configuration and target path or destination", name )
+			}
+
+			if ( isInstanceOf( appender, "coldbox.system.logging.appenders.FileAppender" ) ) {
+				fileAppenders++
+				var logFile = appender.getLogFullpath()
+				if ( fileExists( logFile ) ) {
+					var rawLines = fileRead( logFile ).listToArray( char( 10 ) )
+					var startIdx = max( 1, rawLines.len() - 100 + 1 )
+					for ( var i = rawLines.len(); i >= startIdx; i-- ) {
+						var trimmed = trim( rawLines[ i ] )
+						if ( len( trimmed ) && ( findNoCase( '"ERROR"', trimmed ) || findNoCase( '"FATAL"', trimmed ) ) ) {
+							recentErrors++
+						}
+					}
+				}
+			}
+		} )
+
+		loggerRegistry.each( ( category, logger ) => {
+			if ( logger.hasAppenders() ) return
+			_addIssue( report, "warning", "LOGBOX_LOGGER_NO_APPENDERS", "Logger '#category#' has no appenders", "Attach an appender or verify root logger coverage", category )
+		} )
+
+		if ( recentErrors > 0 ) {
+			_addIssue( report, "info", "LOGBOX_RECENT_ERRORS", "Detected #recentErrors# recent ERROR/FATAL log entries across file appenders", "Review recent log output for the related appenders or categories" )
+		}
+
+		return _buildHealthReport( report, {
+			"totalLoggers"        : totalLoggers,
+			"totalAppenders"      : totalAppenders,
+			"initializedAppenders" : initialized,
+			"uninitializedAppenders" : uninitialized,
+			"fileAppenders"       : fileAppenders,
+			"recentErrors"        : recentErrors
+		} )
+	}
+
+	/**
 	 * Parse a single CSV log line written by FileAppender into a struct.
 	 * Expected format: "SEVERITY","AppenderName","MM/dd/yyyy","HH:mm:ss","category","message"
 	 *

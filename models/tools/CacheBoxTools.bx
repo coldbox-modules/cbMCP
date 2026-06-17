@@ -129,6 +129,83 @@ class extends="BaseTool"{
 	}
 
 	/**
+	 * Get a health assessment of all CacheBox cache providers.
+	 *
+	 * Returns a structured health report with status, score, and per-cache issues.
+	 *
+	 * Status indicators:
+	 * - healthy  : All caches enabled and hit rates are normal
+	 * - warning  : One or more caches are disabled, thrashing, or have low hit rates
+	 * - critical : Not used for cache health in this report
+	 */
+	@mcpTool
+	@AITool
+	function cachebox_get_health() {
+		var cacheBox       = application.cbController.getCacheBox()
+		var report         = _newHealthReport()
+		var cacheNames     = cacheBox.getCacheNames()
+		var total          = cacheNames.len()
+		var totalSize      = 0
+		var totalHits      = 0
+		var totalMisses    = 0
+		var totalEvictions = 0
+		var details        = []
+
+		cacheNames.each( ( cacheName ) => {
+			var cache = cacheBox.getCache( cacheName )
+			var stats = cache.getStats()
+			var size  = cache.getSize()
+			var hits  = stats.getHits()
+			var misses = stats.getMisses()
+			var evictions = stats.getEvictionCount()
+			var enabled = cache.isEnabled()
+			var requests = hits + misses
+			var hitRate  = requests > 0 ? int( ( hits / requests ) * 100 ) : 0
+
+			totalSize      += size
+			totalHits      += hits
+			totalMisses    += misses
+			totalEvictions += evictions
+
+			details.append( {
+				"name"      : cacheName,
+				"provider"  : getMetadata( cache ).name ?: "",
+				"size"      : size,
+				"hits"      : hits,
+				"misses"    : misses,
+				"hitRate"   : hitRate,
+				"evictions" : evictions,
+				"enabled"   : enabled
+			} )
+
+			if ( !enabled ) {
+				_addIssue( report, "warning", "CACHEBOX_DISABLED", "Cache '#cacheName#' is disabled", "Enable the cache if caching is expected for this region", cacheName, { "enabled" : false } )
+			}
+
+			if ( enabled && hitRate < 30 && requests >= 10 ) {
+				_addIssue( report, "warning", "CACHEBOX_LOW_HIT_RATE", "Cache '#cacheName#' has a low hit rate of #hitRate#% (#hits# hits, #misses# misses)", "Review cache keys and TTL strategy", cacheName, { "hitRate" : hitRate, "hits" : hits, "misses" : misses } )
+			}
+
+			if ( enabled && evictions > 0 && evictions >= size ) {
+				_addIssue( report, "warning", "CACHEBOX_HIGH_EVICTIONS", "Cache '#cacheName#' has #evictions# evictions with only #size# items", "Increase cache capacity or review TTL settings", cacheName, { "evictions" : evictions, "size" : size } )
+			}
+		} )
+
+		var totalRequests = totalHits + totalMisses
+		var overallHitRate = totalRequests > 0 ? int( ( totalHits / totalRequests ) * 100 ) : 0
+
+		return _buildHealthReport( report, {
+			"total"          : total,
+			"totalSize"      : totalSize,
+			"totalHits"      : totalHits,
+			"totalMisses"    : totalMisses,
+			"totalEvictions" : totalEvictions,
+			"overallHitRate" : overallHitRate,
+			"details"        : details
+		} )
+	}
+
+	/**
 	 * Clear ALL elements from a specific cache provider.
 	 *
 	 * @cacheName The name of the cache provider to clear

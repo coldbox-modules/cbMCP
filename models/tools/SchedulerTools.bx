@@ -118,6 +118,69 @@ class extends="BaseTool"{
 		return "Task '#arguments.taskName#' in scheduler '#arguments.schedulerName#' has been resumed."
 	}
 
+	/**
+	 * Get a health assessment of all schedulers and their tasks.
+	 *
+	 * Returns a structured health report with status, score, and per-scheduler issues.
+	 *
+	 * Status indicators:
+	 * - healthy  : All schedulers started and tasks are active
+	 * - warning  : One or more schedulers are not started or all tasks are paused
+	 * - critical : Not used for scheduler health in this report
+	 */
+	@mcpTool
+	@AITool
+	function scheduler_get_health() {
+		var report       = _newHealthReport()
+		var schedulers    = getSchedulerMap()
+		var totalTasks    = 0
+		var activeTasks   = 0
+		var pausedTasks   = 0
+		var startedCount  = 0
+
+		schedulers.each( ( key, scheduler ) => {
+			var schedName = scheduler.getSchedulerName()
+
+			if ( scheduler.hasStarted() ) {
+				startedCount++
+			} else {
+				_addIssue( report, "warning", "SCHEDULER_NOT_STARTED", "Scheduler '#schedName#' has not been started", "Start the scheduler during application startup", schedName )
+			}
+
+			var taskCount   = 0
+			var pausedCount = 0
+			scheduler.getRegisteredTasks().each( ( taskName ) => {
+				var taskRecord = scheduler.getTaskRecord( taskName )
+				if ( !isNull( taskRecord ) && !isNull( taskRecord.task ) ) {
+					taskCount++
+					if ( taskRecord.task.isDisabled() ) {
+						pausedTasks++
+						pausedCount++
+					} else {
+						activeTasks++
+					}
+				}
+			} )
+
+			totalTasks += taskCount
+
+			if ( taskCount > 0 && pausedCount == taskCount ) {
+				_addIssue( report, "warning", "SCHEDULER_ALL_TASKS_PAUSED", "All #pausedCount# task(s) in scheduler '#schedName#' are paused", "Resume tasks using scheduler_resume_task()", schedName )
+			}
+		} )
+
+		var stoppedCount = schedulers.size() - startedCount
+
+		return _buildHealthReport( report, {
+			"totalSchedulers"   : schedulers.size(),
+			"startedSchedulers"  : startedCount,
+			"stoppedSchedulers"  : stoppedCount,
+			"totalTasks"         : totalTasks,
+			"activeTasks"        : activeTasks,
+			"pausedTasks"        : pausedTasks
+		} )
+	}
+
 	/*********************************** PRIVATE HELPERS ***********************************/
 
 	/**

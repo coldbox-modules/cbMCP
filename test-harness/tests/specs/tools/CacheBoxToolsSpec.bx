@@ -211,6 +211,27 @@ class extends="coldbox.system.testing.BaseTestCase" {
 				expect( result ).toInclude( "main/index,main/list" )
 			} )
 
+			it( "can get cachebox health", function() {
+				var result = tool.cachebox_get_health()
+				expect( result ).toBeStruct()
+				expect( result ).toHaveKey( "status" )
+				expect( result ).toHaveKey( "score" )
+				expect( result ).toHaveKey( "issues" )
+				expect( result ).toHaveKey( "scoreBreakdown" )
+				expect( result.status ).toBeIn( [ "healthy", "warning", "critical" ] )
+				expect( result.score ).toBeBetween( 0, 100 )
+			} )
+
+			it( "cachebox health issues are structurally valid", function() {
+				var result = tool.cachebox_get_health()
+				result.issues.each( ( issue ) => {
+					expect( issue ).toHaveKey( "severity" )
+					expect( issue ).toHaveKey( "code" )
+					expect( issue ).toHaveKey( "message" )
+					expect( issue ).toHaveKey( "suggestedAction" )
+				} )
+			} )
+
 		} )
 	}
 

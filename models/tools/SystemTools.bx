@@ -8,6 +8,22 @@
 class extends="BaseTool"{
 
 	/**
+	 * Safely call a subsystem health method and normalize failures into warning issues.
+	 *
+	 * @caller The closure that returns a subsystem health report
+	 * @label  The subsystem label used in fallback messages
+	 */
+	private struct function _safeHealthCall( required any caller, required string label ) {
+		try {
+			return arguments.caller()
+		} catch ( any e ) {
+			var report = _newHealthReport()
+			_addIssue( report, "warning", "SYSTEM_SUBSYSTEM_ERROR", "Unable to retrieve health for #arguments.label#: #e.message#", "Check runtime logs for errors related to #arguments.label#" )
+			return _buildHealthReport( report, { "error" : true, "label" : arguments.label } )
+		}
+	}
+
+	/**
 	 * Get the server's current date/time in ISO 8601 format.
 	 */
 	@mcpTool
@@ -86,6 +102,68 @@ class extends="BaseTool"{
 		}
 
 		return result
+	}
+
+	/**
+	 * Get a consolidated health assessment across all cbMCP subsystems.
+	 *
+	 * Aggregates async executors, caches, schedulers, and LogBox into a single structured health report.
+	 *
+	 * Overall status is the worst of all subsystems. Overall score is the lowest subsystem score.
+	 */
+	@mcpTool
+	@AITool
+	function system_get_health() {
+		var subsystems = {}
+
+		subsystems.async     = _safeHealthCall( () => new AsyncTools().async_get_health(), "async" )
+		subsystems.cachebox  = _safeHealthCall( () => new CacheBoxTools().cachebox_get_health(), "cachebox" )
+		subsystems.scheduler = _safeHealthCall( () => new SchedulerTools().scheduler_get_health(), "scheduler" )
+		subsystems.logbox    = _safeHealthCall( () => new LogBoxTools().logbox_get_health(), "logbox" )
+
+		var overallScore  = 100
+		var overallStatus = "healthy"
+
+		subsystems.each( ( key, sub ) => {
+			if ( isStruct( sub ) ) {
+				var subScore = isNumeric( sub.score ?: -1 ) ? sub.score : 100
+				var subStatus = sub.status ?: "healthy"
+				if ( subScore < overallScore ) overallScore = subScore
+				if ( subStatus == "critical" ) {
+					overallStatus = "critical"
+				} else if ( subStatus == "warning" && overallStatus != "critical" ) {
+					overallStatus = "warning"
+				}
+			}
+		} )
+
+		var allIssues = []
+		subsystems.each( ( key, sub ) => {
+			if ( isStruct( sub ) && sub.keyExists( "issues" ) && isArray( sub.issues ) ) {
+				sub.issues.each( ( issue ) => {
+					var prefixed = duplicate( issue )
+					prefixed.code = "#key#:#prefixed.code#"
+					allIssues.append( prefixed )
+				} )
+			}
+		} )
+
+		return {
+			"status"         : overallStatus,
+			"score"          : overallScore,
+			"issues"         : allIssues,
+			"subsystems"     : subsystems,
+			"scoreBreakdown" : {
+				"base"       : 100,
+				"subsystems" : subsystems.map( ( key, sub ) => {
+					return {
+						"subsystem" : key,
+						"score"     : isStruct( sub ) && isNumeric( sub.score ?: -1 ) ? sub.score : 100,
+						"status"    : isStruct( sub ) ? ( sub.status ?: "unknown" ) : "error"
+					}
+				} )
+			}
+		}
 	}
 
 	/**

@@ -21,8 +21,8 @@
 
 ## Requirements
 
-- **BoxLang** 1.x (recommended) or ColdBox 8+
-- **BoxLang AI Module**
+- **BoxLang 1.x** (recommended) or ColdBox 8+
+- **BoxLang AI Module** (`bx-ai`)
 - `box` (CommandBox) for installation
 
 ## Installation
@@ -34,13 +34,197 @@ box install cbmcp
 
 ## Configuration
 
-No extra configuration is required. Once the module is installed and your application boots, the MCP endpoint is live at:
+All settings are configured in the module's configuration struct inside your application's `ColdBox.cfc` under `modules.cbMCP.settings`.
+
+```js
+// config/ColdBox.cfc
+moduleSettings = {
+    cbMCP = {
+        settings = {
+            authToken          : [],
+            securityProfiles   : {
+                admin    : { includedTools: [ "*" ],                                              excludedTools: [] },
+                readonly : { includedTools: [ "*_get*", "*_has*", "*_search*", "*_read*" ],       excludedTools: [] }
+            },
+            allowedIPs         : [ "127.0.0.1" ],
+            corsAllowedOrigins : [],
+            enableStats        : true,
+            maxRequestBodySize : 0,
+            includedTools      : [ "*" ],
+            excludedTools      : []
+        }
+    }
+}
+```
+
+No extra configuration is required beyond this. Once the module is installed and your application boots, the MCP endpoint is live at:
 
 ```
 http://<host>:<port>/cbmcp
 ```
 
 The server auto-scans all tool classes under `cbMCP.models.tools` and registers every `@mcpTool`-annotated function.
+
+### Settings Summary
+
+| Setting | Type | Default | Description |
+|---|---|---|---|
+| `authToken` | string \| array | `[]` | Bearer token(s) controlling access. Supports a simple string or an array of structs with per-token tool filters. Empty = no auth. See [Authentication & Access Control](#authentication--access-control). |
+| `securityProfiles` | struct | `{ admin: { includedTools: ["*"], excludedTools: [] }, readonly: { includedTools: ["*_get*","*_has*","*_search*","*_read*"], excludedTools: [] } }` | Named security profiles that define reusable tool access policies. Profiles are referenced from `authToken` entries via the `profile` field. Two built-in profiles (`admin` and `readonly`) are always available and can be overridden. See [Security Profiles](#security-profiles). |
+| `allowedIPs` | array | `["127.0.0.1"]` | IP allowlist. Supports individual IPs and CIDR ranges (`192.168.0.0/24`). Empty array = all IPs allowed. |
+| `corsAllowedOrigins` | array | `[]` | CORS allowed origins. Supports wildcards (`*.domain.com`). Empty = no CORS headers. |
+| `enableStats` | boolean | `true` | Enable MCP server statistics tracking (tool call counts, timing). |
+| `maxRequestBodySize` | numeric | `0` | Max HTTP request body size in bytes. `0` = no limit. |
+| `includedTools` | array | `["*"]` | Tool whitelist. `["*"]` = all tools. Supports exact names and glob patterns (`handler*`, `cachebox_get*`). |
+| `excludedTools` | array | `[]` | Tools to hide from the MCP client after the whitelist is applied. Supports exact names and glob patterns. |
+
+### Security Notes
+
+- **`authToken`**: Strongly recommended for any non-localhost deployment. Clients must send `Authorization: Bearer {token}`.
+- **`allowedIPs`**: Defaults to `localhost` only. For access from Docker containers or remote machines, add their IPs or CIDR ranges.
+- **`excludedTools`**: Use this to hide sensitive operations (e.g., `system_reinit_app`, `cachebox_clear_all`) from MCP clients. Glob patterns like `cachebox_clear*` are supported.
+
+---
+
+## Authentication & Access Control
+
+The `authToken` setting supports two shapes.
+
+### Shape 1 — Simple string
+
+One token, full access to every registered tool:
+
+```js
+moduleSettings = {
+    cbMCP = {
+        settings = {
+            authToken : "my-secret-token"
+        }
+    }
+}
+```
+
+Clients send:
+
+```
+Authorization: Bearer my-secret-token
+```
+
+### Shape 2 — Array of structs
+
+Multiple tokens, each with independent tool-level access control:
+
+```js
+moduleSettings = {
+    cbMCP = {
+        settings = {
+            authToken : [
+                { token: "admin-token",     includedTools: ["*"],                              excludedTools: [] },
+                { token: "readonly-token",  includedTools: ["*_get*", "*_has*"],              excludedTools: [] },
+                { token: "ops-token",       includedTools: ["*"],                              excludedTools: ["system_reinit_app", "cachebox_clear_all"] }
+            ]
+        }
+    }
+}
+```
+
+Each struct requires a `token` field. Both `includedTools` and `excludedTools` are optional:
+
+| Field | Default | Description |
+|---|---|---|
+| `token` | *(required)* | The Bearer token value the client must send. |
+| `profile` | `"admin"` | Named security profile to apply. References a profile defined in `securityProfiles`. See [Security Profiles](#security-profiles). |
+| `includedTools` | `["*"]` | Tool whitelist. `["*"]` means all tools. Provide specific names to restrict access. Overrides the profile's `includedTools` when set. |
+| `excludedTools` | `[]` | Tools to block even if they match the `includedTools` whitelist. Merged with the profile's `excludedTools`. |
+
+**Filtering rules (applied in order):**
+
+1. If `includedTools` does **not** contain `"*"` and the tool name does not match any pattern → **denied**.
+2. If the tool name matches any pattern in `excludedTools` → **denied**.
+3. Otherwise → **allowed**.
+
+Both `includedTools` and `excludedTools` support **glob patterns**:
+
+| Pattern | Matches |
+|---|---|
+| `"*"` | All tools |
+| `"handler*"` | All tools starting with `handler_` |
+| `"cachebox_get*"` | `cachebox_get_all`, `cachebox_get_stats`, `cachebox_get_keys`, … |
+| `"*_health*"` | Any tool with `_health` in its name |
+| `"system_get_setting"` | Exact match only |
+
+### Security Profiles
+
+Security profiles let you define reusable named access policies that can be referenced from multiple `authToken` entries via the `profile` field. This avoids repeating the same `includedTools`/`excludedTools` patterns across tokens.
+
+#### Built-in Profiles
+
+Two profiles are built in and always available (you can override them in `securityProfiles`):
+
+| Profile | includedTools | excludedTools | Use Case |
+|---|---|---|---|
+| `admin` | `["*"]` | `[]` | Unrestricted access to every tool |
+| `readonly` | `["*_get*", "*_has*", "*_search*", "*_read*"]` | `[]` | Read-only observability — all inspection tools, no mutation |
+
+#### Custom Profiles
+
+Define additional profiles in the `securityProfiles` setting:
+
+```js
+moduleSettings = {
+    cbMCP = {
+        settings = {
+            securityProfiles : {
+                operator : {
+                    includedTools : ["*_get*", "*_has*", "system_reinit_app", "scheduler_*"],
+                    excludedTools : []
+                }
+            }
+        }
+    }
+}
+```
+
+#### Referencing a Profile from a Token
+
+Each `authToken` entry can reference a profile using the `profile` field:
+
+```js
+moduleSettings = {
+    cbMCP = {
+        settings = {
+            authToken : [
+                { token: "admin-token",    profile: "admin" },
+                { token: "readonly-token", profile: "readonly" },
+                { token: "ops-token",      profile: "operator", excludedTools: ["system_reinit_app"] }
+            ]
+        }
+    }
+}
+```
+
+When a `profile` is specified:
+
+1. The profile's `includedTools` and `excludedTools` are loaded as the baseline.
+2. If the token entry also has its own `includedTools`, it **overrides** the profile's `includedTools`.
+3. If the token entry has its own `excludedTools`, they are **merged** with the profile's `excludedTools`.
+4. The standard filtering rules (whitelist → blacklist) are then applied to the merged set.
+
+#### Profile Inheritance Rules
+
+| Token has `profile` | Token has `includedTools` | Token has `excludedTools` | Result |
+|---|---|---|---|
+| Yes | No | No | Profile's settings used as-is |
+| Yes | Yes | No | Token's `includedTools` overrides profile |
+| Yes | No | Yes | Profile's `includedTools` + merged `excludedTools` |
+| Yes | Yes | Yes | Token's `includedTools` overrides profile + merged `excludedTools` |
+| No | Yes/No | Yes/No | No profile applied; token's own settings used directly |
+
+### Disabling authentication
+
+Leave `authToken` empty (`""` or `[]`) or omit it entirely to run in open-access mode (no `Authorization` header required). This is suitable only for localhost-only deployments already protected by `allowedIPs`.
+
+---
 
 ## Connecting an AI Client
 
@@ -101,121 +285,218 @@ http://<host>:<port>/cbmcp
 
 ---
 
-## Available Tools
+## MCP Tools (42 Total)
 
-Tool names use a consistent namespace-prefixed pattern: `<tool-prefix>_<action>_<subject>`. Collection-style tools use `*_get_all`, lightweight name lists use `*_get_names`, and single-entity lookups use `*_get(...)` where applicable.
+The server exposes tools across 11 ColdBox domains. Each tool is an `@mcpTool`-annotated method discovered automatically via classpath scanning.
 
-### System (`SystemTools`)
+### System & Runtime — `SystemTools`
 
 | Tool | Description |
-|------|-------------|
-| `system_get_time` | Returns the server's current date/time (ISO 8601) |
-| `system_get_coldbox_settings` | Returns all ColdBox framework settings |
-| `system_get_runtime_info` | Engine name, version, app layout, and OS |
-| `system_get_application_structure` | Application directory layout (handlers, models, views, etc.) |
+|---|---|
+| `system_get_time` | Server's current date/time in ISO 8601 format |
+| `system_get_coldbox_settings` | All ColdBox framework settings and configuration |
+| `system_get_runtime_info` | Engine name (boxlang/lucee/adobe), version, app layout (flat/boxlang), OS, Java info |
+| `system_get_application_structure` | Application directory layout (handlers, models, views, tests, modules_app) — adapts to both flat and boxlang layouts |
 | `system_get_setting( name )` | Returns a single ColdBox application setting by key |
-| `system_reinit_app` | Reinitialises the ColdBox application |
+| `system_reinit_app` | Reinitialises the ColdBox application (fires preReinit interceptors, shuts down services, removes controller) |
 
-### Handlers (`HandlerTools`)
-
-| Tool | Description |
-|------|-------------|
-| `handler_get_all` | Lists all registered event handlers with their actions |
-| `handler_get( handlerName, [moduleName] )` | Returns metadata for a specific handler |
-
-### Routing (`RoutingTools`)
+### Handlers — `HandlerTools`
 
 | Tool | Description |
-|------|-------------|
-| `routing_get_all` | Lists all registered application routes |
-| `routing_get_module_names` | Lists which modules have routes registered |
-| `routing_get_module( moduleName )` | Returns routes registered by a specific module |
-| `routing_get_settings` | Returns router configuration (default route, SSL, etc.) |
+|---|---|
+| `handler_get_all` | All registered event handlers with their public actions — returns core handlers and per-module handlers |
+| `handler_get( handlerName, [moduleName] )` | Detailed metadata for a specific handler: invocation path, public actions, parent class |
 
-### Modules (`ModuleTools`)
+### Routing — `RoutingTools`
 
 | Tool | Description |
-|------|-------------|
-| `module_get_all` | Returns full metadata for all registered modules |
-| `module_get_names` | Returns a flat list of activated module names |
-| `module_get( moduleName )` | Returns metadata for a specific module |
+|---|---|
+| `routing_get_all` | All registered application routes with patterns and targets |
+| `routing_get_module_names` | Lists which modules have routes registered in the module routing table |
+| `routing_get_module( moduleName )` | Routes registered by a specific module |
+| `routing_get_settings` | Router configuration: base URL, loose matching, multi-domain routing, route counts |
 
-### WireBox (`WireBoxTools`)
-
-| Tool | Description |
-|------|-------------|
-| `wirebox_get_mappings` | Returns all registered DI mappings |
-| `wirebox_has_mapping( name )` | Checks whether a mapping exists |
-| `wirebox_get_mapping( name )` | Returns the full mapping definition for a binding |
-
-### CacheBox (`CacheBoxTools`)
+### Modules — `ModuleTools`
 
 | Tool | Description |
-|------|-------------|
-| `cachebox_get_all` | Returns all registered cache providers with stats |
-| `cachebox_get_names` | Returns a flat list of cache provider names |
-| `cachebox_get_stats( cacheName )` | Returns hit/miss/size statistics for a cache |
-| `cachebox_get_keys( cacheName )` | Lists all keys currently in a cache |
-| `cachebox_get_size( cacheName )` | Returns the number of objects in a cache |
-| `cachebox_get_key_metadata( cacheName, objectKey )` | Returns metadata for a single cached entry |
-| `cachebox_has_key( cacheName, objectKey )` | Checks whether a key exists in a cache |
-| `cachebox_get_store_metadata_report( cacheName )` | Returns full store metadata for all entries |
-| `cachebox_clear_all( cacheName )` | Clears all entries from a cache |
-| `cachebox_clear_item( cacheName, objectKey )` | Clears a single entry by key |
-| `cachebox_clear_all_events( cacheName, [async] )` | Clears all event-cached entries |
-| `cachebox_clear_event( cacheName, eventSnippet, [queryString] )` | Clears a specific event cache entry |
-| `cachebox_clear_event_multi( cacheName, eventSnippets, [queryString] )` | Clears multiple event cache entries |
-| `cachebox_clear_all_views( cacheName, [async] )` | Clears all view-cached entries |
-| `cachebox_clear_view( cacheName, viewSnippet )` | Clears a specific view cache entry |
-| `cachebox_clear_view_multi( cacheName, viewSnippets )` | Clears multiple view cache entries |
+|---|---|
+| `module_get_all` | Full metadata for all registered modules: activation status, versions, paths, settings, conventions, dependencies, entry points, model mappings |
+| `module_get_names` | Flat list of activated module names (sorted) |
+| `module_get( moduleName )` | Full configuration and status for a specific registered module |
 
-### LogBox (`LogBoxTools`)
+### WireBox — `WireBoxTools`
 
 | Tool | Description |
-|------|-------------|
-| `logbox_get_info` | Returns LogBox version, ID, loggers, and appenders |
-| `logbox_get_loggers` | Returns all registered logger definitions |
-| `logbox_get_logger( category )` | Returns the logger definition for a category |
-| `logbox_get_appenders` | Returns all registered appender definitions |
-| `logbox_get_root_logger` | Returns the ROOT logger definition |
-| `logbox_read_entries( [appenderName], [limit=100] )` | Reads the last N entries from file-based appenders |
-| `logbox_get_last_error( [appenderName] )` | Finds the most recent ERROR or FATAL entry in log files |
+|---|---|
+| `wirebox_get_mappings` | All registered DI mappings: path, type, scope, autowire, alias, delegates, thread safety, virtual inheritance |
+| `wirebox_has_mapping( name )` | Checks whether a specific DI mapping exists |
+| `wirebox_get_mapping( name )` | Full mapping definition for a specific binding |
 
-### Interceptors (`InterceptorTools`)
+### CacheBox — `CacheBoxTools`
 
 | Tool | Description |
-|------|-------------|
-| `interceptor_get_all` | Returns all registered interceptors |
-| `interceptor_get_states` | Returns all registered interception points and their listeners |
+|---|---|
+| `cachebox_get_all` | All registered cache providers with stats (hits, misses, evictions, performance ratio) and configuration |
+| `cachebox_get_names` | Sorted list of cache provider names |
+| `cachebox_get_stats( cacheName )` | Detailed hit/miss/eviction/performance statistics for a cache |
+| `cachebox_get_keys( cacheName )` | All keys currently stored in a cache |
+| `cachebox_get_size( cacheName )` | Number of objects in a cache |
+| `cachebox_get_key_metadata( cacheName, objectKey )` | Metadata for a single cached entry |
+| `cachebox_has_key( cacheName, objectKey )` | Existence check for a specific key |
+| `cachebox_get_store_metadata_report( cacheName )` | Full store metadata for all entries in a cache |
+| `cachebox_clear_all( cacheName )` | Clear all entries from a cache |
+| `cachebox_clear_item( cacheName, objectKey )` | Remove a single entry by key |
+| `cachebox_clear_all_events( cacheName, [async] )` | Clear all event-cached entries (IColdBoxProvider only) |
+| `cachebox_clear_event( cacheName, eventSnippet, [queryString] )` | Clear a specific event cache entry |
+| `cachebox_clear_event_multi( cacheName, eventSnippets, [queryString] )` | Clear multiple event cache entries at once |
+| `cachebox_clear_all_views( cacheName, [async] )` | Clear all view-cached entries (IColdBoxProvider only) |
+| `cachebox_clear_view( cacheName, viewSnippet )` | Clear a specific view cache entry |
+| `cachebox_clear_view_multi( cacheName, viewSnippets )` | Clear multiple view cache entries at once |
 
-### Schedulers (`SchedulerTools`)
+### LogBox — `LogBoxTools`
 
 | Tool | Description |
-|------|-------------|
-| `scheduler_get_all` | Returns all registered application schedulers and their tasks |
-| `scheduler_get( schedulerName )` | Returns metadata for a specific scheduler |
-| `scheduler_get_task_stats( schedulerName, taskName )` | Returns execution stats for a specific task |
-| `scheduler_run_task( schedulerName, taskName )` | Executes a scheduled task on demand |
-| `scheduler_pause_task( schedulerName, taskName )` | Pauses a scheduled task |
-| `scheduler_resume_task( schedulerName, taskName )` | Resumes a paused scheduled task |
+|---|---|
+| `logbox_get_info` | LogBox version, ID, registered logger names, and appender names |
+| `logbox_get_loggers` | All registered loggers with category, min/max levels, and appender names |
+| `logbox_get_logger( category )` | Details for a specific logger category |
+| `logbox_get_appenders` | All registered appenders: name, class, min/max levels, initialization status |
+| `logbox_get_root_logger` | Root logger details and attached appenders |
+| `logbox_read_entries( [appenderName], [limit=100] )` | Last N log entries from file-based appenders (FileAppender / RollingFileAppender) |
+| `logbox_get_last_error( [appenderName] )` | Most recent ERROR or FATAL entry from log files |
 
-### Async (`AsyncTools`)
+### Interceptors — `InterceptorTools`
 
 | Tool | Description |
-|------|-------------|
-| `async_get_all` | Returns all registered async executors with their stats |
-| `async_get_names` | Returns a flat list of executor names |
+|---|---|
+| `interceptor_get_all` | All registered interception points with their interceptor pools (name, path, count) |
+| `interceptor_get_states` | Array of all registered interception state names only |
+
+### Schedulers — `SchedulerTools`
+
+| Tool | Description |
+|---|---|
+| `scheduler_get_all` | All registered application schedulers with tasks, stats, started status, server fixation, timezone |
+| `scheduler_get( schedulerName )` | Details for a specific scheduler: tasks, task stats, start time, executor, timezone |
+| `scheduler_get_task_stats( schedulerName, taskName )` | Execution statistics for a specific task |
+| `scheduler_run_task( schedulerName, taskName )` | Execute a scheduled task on demand (force-run, bypasses constraints) |
+| `scheduler_pause_task( schedulerName, taskName )` | Pause a scheduled task so it skips execution until resumed |
+| `scheduler_resume_task( schedulerName, taskName )` | Resume a previously paused scheduled task |
+
+### Async Executors — `AsyncTools`
+
+| Tool | Description |
+|---|---|
+| `async_get_all` | All registered async executors with status, thread pool info, and task statistics |
+| `async_get_names` | Sorted list of registered executor names |
 
 ---
 
-## Resources
+## MCP Resources
 
 `cbMCP` also exposes **MCP Resources** — ambient read-only context automatically injected into AI conversations:
 
 | URI | Description |
-|-----|-------------|
-| `coldbox://app/settings` | All active ColdBox application configuration settings |
-| `coldbox://app/modules` | All currently activated modules with key metadata |
+|---|---|
+| `coldbox://app/settings` | All active ColdBox application configuration settings (key-value, filtered to serializable values) |
+| `coldbox://app/modules` | All currently activated HMVC modules with name, version, description, entry point, author, status |
+| `coldbox://app/routes` | All registered URL routes with pattern, handler, action, name, HTTP methods, module, namespace |
+| `coldbox://app/handlers` | Sorted list of all registered event handler names in the application |
+
+---
+
+## MCP Prompts (5 Total)
+
+The server registers pre-built MCP prompts that guide AI clients through common ColdBox diagnostic and administrative workflows.
+
+| Prompt | Description | Arguments |
+|---|---|---|
+| `coldbox_app_overview` | Comprehensive overview of the ColdBox application: architecture, modules, routing strategy, notable configuration | — |
+| `debug_handler` | Diagnose issues with a specific ColdBox event handler: routing, dependency injection, event execution lifecycle | `handlerName` *(required)* |
+| `cache_health_report` | CacheBox health report: hit rates, eviction counts, object counts, identify degraded or pressured providers | — |
+| `interceptor_audit` | Full interceptor audit: registered interception points, listener pools, ordering improvements, conflict detection | — |
+
+---
+
+## Client Interaction Examples
+
+All interactions use JSON-RPC 2.0 over HTTP POST to `/cbmcp`.
+
+> Replace `http://localhost:{port}` with your server URL. Add `Authorization: Bearer {token}` if `authToken` is configured.
+
+### 1. List all available tools
+
+```bash
+curl -s http://localhost:60299/cbmcp \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","method":"tools/list","id":"1"}' | jq '.result.tools[] | {name, description}'
+```
+
+### 2. Get ColdBox runtime info
+
+```bash
+curl -s http://localhost:60299/cbmcp \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","method":"tools/call","params":{"name":"system_get_runtime_info","arguments":{}},"id":"2"}' | jq '.result.content[0].text | fromjson'
+```
+
+### 3. List all registered handlers
+
+```bash
+curl -s http://localhost:60299/cbmcp \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","method":"tools/call","params":{"name":"handler_get_all","arguments":{}},"id":"3"}' | jq '.result.content[0].text | fromjson'
+```
+
+### 4. Get all application routes
+
+```bash
+curl -s http://localhost:60299/cbmcp \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","method":"tools/call","params":{"name":"routing_get_all","arguments":{}},"id":"4"}' | jq '.result.content[0].text | fromjson'
+```
+
+### 5. Check a WireBox mapping
+
+```bash
+curl -s http://localhost:60299/cbmcp \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","method":"tools/call","params":{"name":"wirebox_has_mapping","arguments":{"name":"MyService"}},"id":"5"}' | jq '.result.content[0].text | fromjson'
+```
+
+### 6. Get cache statistics
+
+```bash
+curl -s http://localhost:60299/cbmcp \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","method":"tools/call","params":{"name":"cachebox_get_stats","arguments":{"cacheName":"default"}},"id":"6"}' | jq '.result.content[0].text | fromjson'
+```
+
+### 7. Get scheduler info and run a task
+
+```bash
+curl -s http://localhost:60299/cbmcp \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","method":"tools/call","params":{"name":"scheduler_run_task","arguments":{"schedulerName":"myScheduler","taskName":"dailyReport"}},"id":"7"}' | jq '.result.content[0].text | fromjson'
+```
+
+### 8. Read recent log entries
+
+```bash
+curl -s http://localhost:60299/cbmcp \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","method":"tools/call","params":{"name":"logbox_read_entries","arguments":{"limit":20}},"id":"8"}' | jq '.result.content[0].text | fromjson'
+```
+
+> **Tip:** Pipe through `jq` to extract and parse the JSON response. The MCP server wraps tool results inside `result.content[0].text` as a JSON-encoded string.
+
+### Calling a Prompt
+
+```bash
+curl -s http://localhost:60299/cbmcp \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","method":"prompts/get","params":{"name":"coldbox_app_overview","arguments":{}},"id":"9"}' | jq '.result.messages'
+```
 
 ---
 

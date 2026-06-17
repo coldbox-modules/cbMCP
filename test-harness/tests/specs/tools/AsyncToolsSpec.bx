@@ -63,6 +63,27 @@ class extends="coldbox.system.testing.BaseTestCase" {
 				} )
 			} )
 
+			it( "can get async executor health", function() {
+				var result = tool.async_get_health()
+				expect( result ).toBeStruct()
+				expect( result ).toHaveKey( "status" )
+				expect( result ).toHaveKey( "score" )
+				expect( result ).toHaveKey( "issues" )
+				expect( result ).toHaveKey( "scoreBreakdown" )
+				expect( result.status ).toBeIn( [ "healthy", "warning", "critical" ] )
+				expect( result.score ).toBeBetween( 0, 100 )
+			} )
+
+			it( "async health issues are structurally valid", function() {
+				var result = tool.async_get_health()
+				result.issues.each( ( issue ) => {
+					expect( issue ).toHaveKey( "severity" )
+					expect( issue ).toHaveKey( "code" )
+					expect( issue ).toHaveKey( "message" )
+					expect( issue ).toHaveKey( "suggestedAction" )
+				} )
+			} )
+
 		} )
 	}
 

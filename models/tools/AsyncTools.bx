@@ -25,4 +25,63 @@ class extends="BaseTool"{
 		return application.cbController.getAsyncManager().getExecutors().keyArray().sort()
 	}
 
+	/**
+	 * Get a health assessment of all async executors.
+	 *
+	 * Returns a structured health report with status, score, and per-executor issues.
+	 *
+	 * Status indicators:
+	 * - healthy  : All executors are healthy or idle
+	 * - warning  : One or more executors are degraded
+	 * - critical : One or more executors are shutdown or terminated
+	 */
+	@mcpTool
+	@AITool
+	function async_get_health() {
+		var executors = application.cbController.getAsyncManager().getExecutorStatusMap()
+		var report    = _newHealthReport()
+		var total     = executors.len()
+		var healthy   = 0
+		var degraded  = 0
+		var critical  = 0
+		var idle      = 0
+		var shutdown  = 0
+		var terminated = 0
+		var details   = []
+
+		executors.each( ( name, executor ) => {
+			var status = executor.healthStatus ?: "healthy"
+			details.append( { "name" : name, "status" : status, "type" : executor.type ?: "" } )
+			switch ( status ) {
+				case "healthy": healthy++; break
+				case "idle": idle++; break
+				case "degraded":
+					degraded++
+					_addIssue( report, "warning", "EXECUTOR_DEGRADED", "Executor '#name#' is degraded", "Review executor stats using async_get_all()", name, { "status" : status } )
+					break
+				case "shutdown":
+					shutdown++
+					critical++
+					_addIssue( report, "critical", "EXECUTOR_SHUTDOWN", "Executor '#name#' is shutdown", "Review executor stats using async_get_all()", name, { "status" : status } )
+					break
+				case "terminated":
+					terminated++
+					critical++
+					_addIssue( report, "critical", "EXECUTOR_TERMINATED", "Executor '#name#' is terminated", "Review executor stats using async_get_all()", name, { "status" : status } )
+					break
+			}
+		} )
+
+		return _buildHealthReport( report, {
+			"total"       : total,
+			"healthy"     : healthy,
+			"degraded"    : degraded,
+			"critical"    : critical,
+			"idle"        : idle,
+			"shutdown"    : shutdown,
+			"terminated"  : terminated,
+			"details"     : details
+		} )
+	}
+
 }

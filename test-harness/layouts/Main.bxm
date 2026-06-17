@@ -452,13 +452,16 @@
 		</div>
 
 		<!--- Collect MCP Server data --->
-		<bx:set mcpServer     = mcpServer( "cbMCP" ) />
-		<bx:set serverInfo    = mcpServer.getServerInfo() />
-		<bx:set statsSummary  = mcpServer.getStatsSummary() />
-		<bx:set tools         = mcpServer.listTools() />
-		<bx:set resources     = mcpServer.listResources() />
-		<bx:set prompts       = mcpServer.listPrompts() />
-		<bx:set detailedStats = mcpServer.getStats() />
+		<bx:script>
+		mcpServer     = mcpServer( "cbMCP" )
+		serverInfo    = mcpServer.getServerInfo()
+		statsSummary  = mcpServer.getStatsSummary()
+		// This is an array of structs, I want it ordered by name
+		tools         = mcpServer.listTools().sort( ( a, b ) => a.name < b.name ? -1 : 1 )
+		resources     = mcpServer.listResources()
+		prompts       = mcpServer.listPrompts()
+		detailedStats = mcpServer.getStats()
+		</bx:script>
 
 		<!--- ===== Server Identity + Stats Row ===== --->
 		<div class="row g-4 mb-5">

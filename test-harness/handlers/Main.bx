@@ -4,8 +4,8 @@
 class{
 
 	// Index
-	any function index( event,rc, prc ){
-		event.setView( "main/index" );
+	function index( event,rc, prc ){
+		event.setView( "main/index" )
 	}
 
 }

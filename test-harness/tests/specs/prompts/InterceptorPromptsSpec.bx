@@ -1,0 +1,31 @@
+class extends="coldbox.system.testing.BaseTestCase" {
+
+	function run() {
+		describe( "InterceptorPrompts", function() {
+			it( "can be instantiated", function() {
+				var prompts = new cbMCP.models.prompts.InterceptorPrompts()
+				expect( prompts ).toBeClass()
+			} )
+
+			it( "registers without throwing", function() {
+				var prompts = new cbMCP.models.prompts.InterceptorPrompts()
+				var registry = []
+				var mcpServer = {
+					registerPrompt : function( string name = "", string description = "", array args = [], any handler ) {
+						arrayAppend( registry, {
+							name        : arguments.name,
+							description : arguments.description,
+							args        : arguments.args,
+							handler     : arguments.handler
+						} )
+					}
+				}
+				prompts.register( mcpServer )
+				expect( registry.len() ).toBe( 1 )
+				expect( registry[ 1 ].name ).toBe( "interceptor_audit" )
+				expect( registry[ 1 ] ).toHaveKey( "handler" )
+			} )
+		} )
+	}
+
+}

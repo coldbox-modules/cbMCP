@@ -9,8 +9,8 @@ class {
 	/**
 	 * Get all registered async executors with their status, thread pool info, and task statistics.
 	 */
-	@AITool
 	@mcpTool
+	@AITool
 	function get_executors() {
 		return application.cbController.getAsyncManager().getExecutorStatusMap()
 	}
@@ -19,8 +19,8 @@ class {
 	 * Get all the registered async executors names only
 	 * This is useful for populating dropdowns or selection lists where only the names are needed.
 	 */
-	@AITool
 	@mcpTool
+	@AITool
 	function get_executor_names() {
 		return application.cbController.getAsyncManager().getExecutors().keyArray().sort()
 	}

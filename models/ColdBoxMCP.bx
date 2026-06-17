@@ -1,0 +1,122 @@
+/**
+ * Copyright Since 2005 ColdBox Framework by Luis Majano and Ortus Solutions, Corp
+ * www.ortussolutions.com
+ * ---
+ * MCP Tools for ColdBox application introspection.
+ *
+ * Provides the MCP server registration, resources, prompts, and tool discovery
+ * for the cbMCP module.
+ */
+class extends="bxModules.bxai.models.mcp.MCPServer" {
+
+	/**
+	 * Initialize the ColdBox MCP server.
+	 */
+	function init() {
+		super.init(
+			name        = "cbMCP",
+			description = "An MCP Server for ColdBox AI Tools",
+			version     = "@build.version@+@build.number@",
+			cors        = "*",
+			statsEnabled = true,
+			force       = true
+		)
+
+		this.scan( "cbMCP.models.tools" )
+		registerResources()
+		registerPrompts()
+
+		return this
+	}
+
+	/**
+	 * Register the ambient read-only resources exposed by the server.
+	 */
+	private void function registerResources() {
+		this.registerResource(
+			uri         : "coldbox://app/settings",
+			name        : "ColdBox Application Settings",
+			description : "All active ColdBox application configuration settings",
+			mimeType    : "application/json",
+			handler     : () => {
+				var settings = application.cbController.getConfigSettings()
+				var safe = {}
+				for ( var key in settings ) {
+					var val = settings[ key ]
+					if ( isSimpleValue( val ) || isArray( val ) || isStruct( val ) ) {
+						safe[ key ] = val
+					}
+				}
+				return safe
+			}
+		)
+
+		this.registerResource(
+			uri         : "coldbox://app/modules",
+			name        : "Loaded ColdBox Modules",
+			description : "All currently activated HMVC modules with their key metadata",
+			mimeType    : "application/json",
+			handler     : () => {
+				var modules = application.cbController.getSetting( "modules" )
+				return modules
+					.keyArray()
+					.sort( "text", "asc" )
+					.map( name => {
+						var m = modules[ name ]
+						return {
+							name        : name,
+							version     : m.version ?: "",
+							description : m.description ?: "",
+							entryPoint  : m.entryPoint ?: "",
+							author      : m.author ?: "",
+							activated   : m.activated ?: false
+						}
+					} )
+			}
+		)
+
+		this.registerResource(
+			uri         : "coldbox://app/routes",
+			name        : "ColdBox Route Definitions",
+			description : "All registered URL routes with their patterns and handler targets",
+			mimeType    : "application/json",
+			handler     : () => {
+				var routes = application.cbController.getRoutingService().getRouter().getRoutes()
+				return routes.map( r => {
+					return {
+						pattern   : r.pattern ?: "",
+						handler   : r.handler ?: "",
+						action    : r.action ?: "",
+						name      : r.name ?: "",
+						methods   : r.methods ?: [],
+						module    : r.module ?: "",
+						namespace : r.namespace ?: ""
+					}
+				} )
+			}
+		)
+
+		this.registerResource(
+			uri         : "coldbox://app/handlers",
+			name        : "Registered ColdBox Handlers",
+			description : "All registered event handlers (controllers) in the application",
+			mimeType    : "application/json",
+			handler     : () => {
+				var handlers = listToArray( application.cbController.getSetting( "registeredHandlers" ) )
+				handlers.sort( "text", "asc" )
+				return handlers
+			}
+		)
+	}
+
+	/**
+	 * Register the prompt classes for the server.
+	 */
+	private void function registerPrompts() {
+		new cbMCP.models.prompts.ApplicationPrompts().register( this )
+		new cbMCP.models.prompts.HandlerPrompts().register( this )
+		new cbMCP.models.prompts.CacheBoxPrompts().register( this )
+		new cbMCP.models.prompts.InterceptorPrompts().register( this )
+	}
+
+}

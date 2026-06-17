@@ -1,0 +1,21 @@
+/**
+ * Copyright Since 2005 ColdBox Framework by Luis Majano and Ortus Solutions, Corp
+ * www.ortussolutions.com
+ * ---
+ * MCP prompts for ColdBox handler diagnostics workflows.
+ */
+class extends="BasePrompt" {
+	public void function register( required any mcpServer ) {
+		arguments.mcpServer.registerPrompt(
+			name        : "debug_handler",
+			description : "Diagnoses issues with a specific ColdBox event handler",
+			args        : [
+				{ name: "handlerName", description: "The handler to investigate (e.g. 'Main' or 'api:Users')", required: true }
+			],
+			handler     : function( struct args = {} ) {
+				var handlerName = arguments.args.handlerName ?: ""
+				return "Diagnose the ColdBox handler '#handlerName#'. Use the get_handler_metadata and get_registered_handlers MCP tools to gather details, then identify any potential issues with routing, dependency injection, or event execution lifecycle."
+			}
+		)
+	}
+}

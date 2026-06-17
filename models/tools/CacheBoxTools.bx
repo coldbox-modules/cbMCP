@@ -9,8 +9,8 @@ class {
 	/**
 	 * Get all registered CacheBox cache providers and their statistics.
 	 */
-	@AITool
 	@mcpTool
+	@AITool
 	function get_caches() {
 		var cacheBox   = application.cbController.getCacheBox()
 		var results = cacheBox.getCacheNames()
@@ -43,8 +43,8 @@ class {
 	/**
 	 * Get all the names of the registered CacheBox cache providers.
 	 */
-	@AITool
 	@mcpTool
+	@AITool
 	function get_cache_names() {
 		return application.cbController.getCacheBox().getCacheNames().sort()
 	}
@@ -54,8 +54,8 @@ class {
 	 *
 	 * @cacheName The name of the cache provider to inspect
 	 */
-	@AITool
 	@mcpTool
+	@AITool
 	function get_cache_stats( required string cacheName ) {
 		var cache = application.cbController.getCacheBox().getCache( arguments.cacheName )
 		var stats = cache.getStats()
@@ -75,8 +75,8 @@ class {
 	 *
 	 * @cacheName The name of the cache provider to inspect
 	 */
-	@AITool
 	@mcpTool
+	@AITool
 	function get_cache_keys( required string cacheName ) {
 		return application.cbController.getCacheBox().getCache( arguments.cacheName ).getKeys()
 	}
@@ -86,8 +86,8 @@ class {
 	 *
 	 * @cacheName The name of the cache provider to inspect
 	 */
-	@AITool
 	@mcpTool
+	@AITool
 	function get_cache_size( required string cacheName ) {
 		return application.cbController.getCacheBox().getCache( arguments.cacheName ).getSize()
 	}
@@ -98,8 +98,8 @@ class {
 	 * @cacheName The name of the cache provider
 	 * @objectKey The key of the cached object
 	 */
-	@AITool
 	@mcpTool
+	@AITool
 	function get_cache_key_metadata( required string cacheName, required string objectKey ) {
 		return application.cbController.getCacheBox().getCache( arguments.cacheName ).getCachedObjectMetadata( arguments.objectKey )
 	}
@@ -110,8 +110,8 @@ class {
 	 * @cacheName The name of the cache provider
 	 * @objectKey The key to look up
 	 */
-	@AITool
 	@mcpTool
+	@AITool
 	function cache_key_exists( required string cacheName, required string objectKey ) {
 		return application.cbController.getCacheBox().getCache( arguments.cacheName ).lookup( arguments.objectKey )
 	}
@@ -122,8 +122,8 @@ class {
 	 *
 	 * @cacheName The name of the cache provider
 	 */
-	@AITool
 	@mcpTool
+	@AITool
 	function get_store_metadata_report( required string cacheName ) {
 		return application.cbController.getCacheBox().getCache( arguments.cacheName ).getStoreMetadataReport()
 	}
@@ -133,8 +133,8 @@ class {
 	 *
 	 * @cacheName The name of the cache provider to clear
 	 */
-	@AITool
 	@mcpTool
+	@AITool
 	function clear_all( required string cacheName ) {
 		application.cbController.getCacheBox().getCache( arguments.cacheName ).clearAll()
 		return "Cache '#arguments.cacheName#' has been cleared."
@@ -146,8 +146,8 @@ class {
 	 * @cacheName The name of the cache provider
 	 * @objectKey The key of the item to remove
 	 */
-	@AITool
 	@mcpTool
+	@AITool
 	function clear_item( required string cacheName, required string objectKey ) {
 		var removed = application.cbController.getCacheBox().getCache( arguments.cacheName ).clear( arguments.objectKey )
 		return removed
@@ -160,8 +160,8 @@ class {
 	 * @cacheName The name of the ColdBox application cache provider
 	 * @async     Whether to clear asynchronously (default: false)
 	 */
-	@AITool
 	@mcpTool
+	@AITool
 	function clear_all_events( required string cacheName, boolean async = false ) {
 		var cache = application.cbController.getCacheBox().getCache( arguments.cacheName )
 		if ( !( cache instanceOf "coldbox.system.cache.providers.IColdBoxProvider" ) ) {
@@ -178,8 +178,8 @@ class {
 	 * @eventSnippet  The full or partial event name to clear (e.g. "main.index")
 	 * @queryString   Optional query string to target a specific permutation
 	 */
-	@AITool
 	@mcpTool
+	@AITool
 	function clear_event( required string cacheName, required string eventSnippet, string queryString = "" ) {
 		var cache = application.cbController.getCacheBox().getCache( arguments.cacheName )
 		if ( !( cache instanceOf "coldbox.system.cache.providers.IColdBoxProvider" ) ) {
@@ -196,8 +196,8 @@ class {
 	 * @eventSnippets  Comma-delimited list of event snippets to clear
 	 * @queryString    Optional comma-delimited list of query strings (must match eventSnippets length if provided)
 	 */
-	@AITool
 	@mcpTool
+	@AITool
 	function clear_event_multi( required string cacheName, required string eventSnippets, string queryString = "" ) {
 		var cache = application.cbController.getCacheBox().getCache( arguments.cacheName )
 		if ( !( cache instanceOf "coldbox.system.cache.providers.IColdBoxProvider" ) ) {

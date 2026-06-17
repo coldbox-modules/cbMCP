@@ -1,0 +1,20 @@
+/**
+ * Copyright Since 2005 ColdBox Framework by Luis Majano and Ortus Solutions, Corp
+ * www.ortussolutions.com
+ * ---
+ * MCP prompts for ColdBox application overview workflows.
+ */
+class extends="BasePrompt" {
+	public void function register( required any mcpServer ) {
+		arguments.mcpServer.registerPrompt(
+			name        : "coldbox_app_overview",
+			description : "Generates a comprehensive overview of this ColdBox application",
+			handler     : function( struct args = {} ) {
+				var ctrl    = application.cbController
+				var appName = ctrl.getSetting( "appName" )
+				var modules = ctrl.getSetting( "modules" ).keyArray().sort( "text", "asc" )
+				return "Provide a comprehensive overview of this ColdBox application. Here is what I know so far:\nApp Name  : #appName#\nModules   : #modules.toList()#\n\nUse the available MCP tools (get_coldbox_settings, get_application_structure, get_router_settings, get_interceptors, etc.) to gather additional details, then summarise the architecture, key modules, routing strategy, and any notable configuration."
+			}
+		)
+	}
+}
